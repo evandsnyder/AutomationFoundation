@@ -1,0 +1,28 @@
+﻿#pragma once
+
+#include "ItemSpecification.h"
+#include "InventoryItemInstance.generated.h"
+
+UCLASS(BlueprintType)
+class UInventoryItemInstance : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UItemSpecification* ItemSpecification;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 CurrentStackSize = 1;
+
+	UInventoryItemInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	UFUNCTION(BlueprintCallable)
+	UStaticMesh* GetDisplayMesh() const;
+
+	UFUNCTION()
+	bool HasClassificationFlag(EItemClassification ItemClassificationFlag) const;
+
+private:
+	friend class UInventoryComponent;
+};

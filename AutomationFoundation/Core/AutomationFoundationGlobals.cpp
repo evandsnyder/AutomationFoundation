@@ -1,0 +1,1 @@
+﻿#include "AutomationFoundationGlobals.h"
