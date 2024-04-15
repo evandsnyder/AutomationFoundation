@@ -14,7 +14,7 @@ void UBuildShelfComponent::BeginPlay()
 	if (const AAutomationFoundationGameMode* GameMode = Cast<AAutomationFoundationGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		TArray<UBuildingSpecification*> Buildings = GameMode->FindAllBuildings();
-	
+
 		int32 Index = 0;
 		for (auto Building : Buildings)
 		{
@@ -25,12 +25,19 @@ void UBuildShelfComponent::BeginPlay()
 	}
 }
 
-UBuildingSpecification* UBuildShelfComponent::GetBuildModelByIndex(int32 Index)
+UBuildingSpecification* UBuildShelfComponent::UpdateIndexAndGetBuildModel(int32 Index)
 {
 	if (Index < 0 || Index > BuildShelf.Num())
 	{
-		return nullptr;
+		CurrentIndex = 0;
 	}
 
-	return BuildShelf[Index];
+	CurrentIndex = Index;
+
+	return BuildShelf[CurrentIndex];
+}
+
+int32 UBuildShelfComponent::GetCurrentIndex() const
+{
+	return CurrentIndex;
 }

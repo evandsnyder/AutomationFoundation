@@ -16,5 +16,5 @@ class IInteractable
 public:
 	virtual FText GetInteractionText() = 0;
 
-	virtual void OnInteract() = 0;
+	virtual void OnInteract(AActor* InteractInstigator) = 0;
 };

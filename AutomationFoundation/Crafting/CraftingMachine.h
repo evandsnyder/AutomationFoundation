@@ -64,7 +64,7 @@ public:
 	void OnCraftingComplete();
 
 
-	virtual void OnInteract() override;
+	virtual void OnInteract(AActor* InteractInstigator) override;
 
 	virtual FText GetInteractionText() override;
 

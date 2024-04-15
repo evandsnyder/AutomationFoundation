@@ -54,10 +54,9 @@ void AItemPickup::OnPlayerEndOverlap()
 void AItemPickup::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
-void AItemPickup::OnInteract_Implementation()
+void AItemPickup::OnInteract_Implementation(AActor* InteractInstigator)
 {
 	if (PlayerCharacter)
 	{

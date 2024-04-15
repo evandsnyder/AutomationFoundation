@@ -23,6 +23,10 @@ public:
 	UFUNCTION()
 	bool HasClassificationFlag(EItemClassification ItemClassificationFlag) const;
 
+	UFUNCTION(BlueprintCallable)
+	void ModifyCurrentStackSize(int32 Value);
+	
+
 private:
 	friend class UInventoryComponent;
 };

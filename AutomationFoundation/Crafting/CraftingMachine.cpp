@@ -110,7 +110,7 @@ void ACraftingMachine::OnCraftingComplete_Implementation()
 	}
 }
 
-void ACraftingMachine::OnInteract()
+void ACraftingMachine::OnInteract(AActor* InteractInstigator)
 {
 	UE_LOG(LogTemp, Display, TEXT("Interacting with  Crafting Machine"));
 

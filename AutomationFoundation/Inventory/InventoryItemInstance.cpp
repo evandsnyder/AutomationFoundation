@@ -14,3 +14,8 @@ bool UInventoryItemInstance::HasClassificationFlag(EItemClassification ItemClass
 {
 	return ItemSpecification && ItemSpecification->ItemClassificationFlags & static_cast<uint8>(ItemClassificationFlag);
 }
+
+void UInventoryItemInstance::ModifyCurrentStackSize(int32 Value)
+{
+	CurrentStackSize += Value;
+}

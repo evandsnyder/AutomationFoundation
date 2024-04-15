@@ -9,10 +9,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
+#include "AutomationFoundation/AutomationFoundation.h"
 #include "AutomationFoundation/BuildSystem/BuildingSpecification.h"
 #include "AutomationFoundation/BuildSystem/BuildShelfComponent.h"
-#include "AutomationFoundation/BuildSystem/PreviewObjects/AFBeltSupportPreview.h"
-#include "AutomationFoundation/BuildSystem/PreviewObjects/AFConveyorBeltPreview.h"
+#include "AutomationFoundation/BuildSystem/PreviewObjects/SupportBeam.h"
+#include "AutomationFoundation/BuildSystem/PreviewObjects/ConveyorBelt.h"
 #include "AutomationFoundation/BuildSystem/PreviewObjects/AFDefaultPreview.h"
 #include "AutomationFoundation/Components/ToolbarComponent.h"
 #include "AutomationFoundation/Interaction/IInteractable.h"
@@ -201,6 +202,8 @@ void AAutomationFoundationCharacter::PlaceItem(const FInputActionValue& Value)
 		{
 			// TODO: if the placement succeeds, then we need to accept the cost of the placement
 			LOG_INFO(LogTemp, "Placed New Item in the world");
+			PlaceableActor = nullptr;
+			RefreshBuildItem(BuildShelf->GetCurrentIndex() + 1); // Have to do the +1 here to account for the subtract offset in the refresh method
 		}
 	}
 }
@@ -237,6 +240,13 @@ void AAutomationFoundationCharacter::EnterBuildMode()
 void AAutomationFoundationCharacter::ExitBuildMode()
 {
 	LOG_INFO(LogTemp, "Exiting Build Mode");
+
+	if (PlaceableActor)
+	{
+		PlaceableActor->CancelPreview();
+		PlaceableActor = nullptr;
+	}
+
 	PlayerMode = EPlayerMode::Default;
 	InputSubsystem->RemoveMappingContext(BuildModeMappingContext);
 }
@@ -256,18 +266,13 @@ void AAutomationFoundationCharacter::RefreshBuildItem(int32 ActiveToolbarSlot)
 		PlaceableActor->CancelPreview();
 	}
 
-	if (BuildLocationRefreshTimer.IsValid())
-	{
-		GetWorldTimerManager().ClearTimer(BuildLocationRefreshTimer);
-	}
-
 	ActiveToolbarSlot -= 1;
 	if (ActiveToolbarSlot < 0)
 	{
 		// Safety check to loop back to the end of the slot index stuff..
 		ActiveToolbarSlot = 9;
 	}
-	UBuildingSpecification* BuildingSpecification = BuildShelf->GetBuildModelByIndex(ActiveToolbarSlot);
+	UBuildingSpecification* BuildingSpecification = BuildShelf->UpdateIndexAndGetBuildModel(ActiveToolbarSlot);
 	if (!IsValid(BuildingSpecification))
 	{
 		// Slot is empty or a nullptr 
@@ -280,18 +285,18 @@ void AAutomationFoundationCharacter::RefreshBuildItem(int32 ActiveToolbarSlot)
 
 	const FVector SpawnLocation;
 	const FRotator SpawnRotation;
-	PlaceableActor = GetWorld()->SpawnActor<AAFPreview>(PreviewClass, SpawnLocation, SpawnRotation);
+	PlaceableActor = GetWorld()->SpawnActor<APlaceable>(PreviewClass, SpawnLocation, SpawnRotation);
 	if (PlaceableActor)
 	{
 		PlaceableActor->Configure(BuildingSpecification);
 		PlaceableActor->CreatePreview();
 
-		GetWorldTimerManager().SetTimer(BuildLocationRefreshTimer, this, &AAutomationFoundationCharacter::RefreshBuildLocation, 0.1f,
-		                                true);
+		// GetWorldTimerManager().SetTimer(BuildLocationRefreshTimer, this, &AAutomationFoundationCharacter::RefreshBuildLocation, 0.1f,
+		//                                 true);
 	}
 }
 
-FHitResult AAutomationFoundationCharacter::FindBuildModeLocation() const
+FHitResult AAutomationFoundationCharacter::FindBuildModeLocation(ECollisionChannel CollisionChannel) const
 {
 	// Raycast straight out
 	FCollisionQueryParams TraceParameters = FCollisionQueryParams(TEXT("BuildLineTrace"), true, this);
@@ -311,7 +316,7 @@ FHitResult AAutomationFoundationCharacter::FindBuildModeLocation() const
 
 	DrawDebugLine(GetWorld(), InitialTraceStart, InitialTraceEnd, FColor::Red);
 
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, InitialTraceStart, InitialTraceEnd, ECC_Visibility, TraceParameters))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, InitialTraceStart, InitialTraceEnd, CollisionChannel, TraceParameters))
 	{
 		return HitResult;
 	}
@@ -354,7 +359,7 @@ void AAutomationFoundationCharacter::Interact(const FInputActionValue& Value)
 {
 	if (CurrentInteractable)
 	{
-		CurrentInteractable->OnInteract();
+		CurrentInteractable->OnInteract(this);
 	}
 }
 
@@ -467,4 +472,8 @@ void AAutomationFoundationCharacter::BuildQuickActionNine(const FInputActionValu
 void AAutomationFoundationCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (PlayerMode == EPlayerMode::Default) return;
+
+	RefreshBuildLocation();
 }

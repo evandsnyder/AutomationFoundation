@@ -75,7 +75,7 @@ float AResourceExtractor::GetCraftingProgress() const
 
 void AResourceExtractor::OnPlaced(AActor* PlacedOnActor)
 {
-	IPlaceable::OnPlaced(PlacedOnActor);
+	// IPlaceable::OnPlaced(PlacedOnActor);
 
 	if (AResourceNode* Node = Cast<AResourceNode>(PlacedOnActor))
 	{
@@ -83,7 +83,7 @@ void AResourceExtractor::OnPlaced(AActor* PlacedOnActor)
 	}
 }
 
-void AResourceExtractor::OnInteract()
+void AResourceExtractor::OnInteract(AActor* InteractInstigator)
 {
 	if (PlayerCharacter.IsValid())
 	{

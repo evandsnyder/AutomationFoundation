@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include "AFPreview.h"
+#include "Placeable.h"
 
 #include "AFDefaultPreview.generated.h"
 
 UCLASS()
-class AAFDefaultPreview : public AAFPreview
+class AAFDefaultPreview : public APlaceable
 {
 	GENERATED_BODY()
 

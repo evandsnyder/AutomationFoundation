@@ -72,6 +72,10 @@ bool UInventoryComponent::RemoveItemFromInventory(UInventoryItemInstance* Item)
 		Inventory[ItemIndex] = nullptr;
 		OnItemChanged.Broadcast(nullptr, ItemIndex);
 		// TODO: Spawn Actor in the world if the stack count is greater than 0
+		if (Item->CurrentStackSize > 0)
+		{
+			// GetWorld()->SpawnActor()
+		}
 	}
 
 	return bFound;
@@ -114,7 +118,6 @@ bool UInventoryComponent::Transfer(int32 SourceIndex, UInventoryComponent* Sourc
 	// Several things can happen
 	// 1. Destination spot is nullptr
 	// 2. Items are different at each spot
-	// TODO: #2 is not working
 	// 4. Item stack is full
 	// 5. Items are same and amount to less than a full stack
 	// 6. Items are same but overflow stack size
@@ -138,7 +141,7 @@ bool UInventoryComponent::Transfer(int32 SourceIndex, UInventoryComponent* Sourc
 		return true;
 	}
 
-	//  2. && && 4.
+	//  2. && 4.
 	if (SourceInstance->ItemSpecification->ItemID != ItemSpecification->ItemID ||
 		DestinationInstance->CurrentStackSize == ItemSpecification->MaxStackSize)
 	{
@@ -217,6 +220,26 @@ void UInventoryComponent::ResetFilters()
 int32 UInventoryComponent::GetInventorySize() const
 {
 	return InventorySize;
+}
+
+bool UInventoryComponent::IsEmpty() const
+{
+	return Inventory.IsEmpty();
+}
+
+UInventoryItemInstance* UInventoryComponent::FindFirstItem(int32& Index) const
+{
+	for (int i = 0; i < InventorySize; i++)
+	{
+		if (IsValid(Inventory[i]))
+		{
+			Index = i;
+			return Inventory[Index];
+		}
+	}
+
+	Index = INDEX_NONE;
+	return nullptr;
 }
 
 bool UInventoryComponent::HasAvailableSpace() const

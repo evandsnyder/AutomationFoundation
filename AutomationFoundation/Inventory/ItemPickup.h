@@ -40,6 +40,6 @@ public:
 	virtual FText GetInteractionText() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	void OnInteract();
-	void OnInteract_Implementation();
+	void OnInteract(AActor* InteractInstigator);
+	void OnInteract_Implementation(AActor* InteractInstigator);
 };

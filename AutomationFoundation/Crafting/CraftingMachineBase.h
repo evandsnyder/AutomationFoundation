@@ -17,7 +17,7 @@ public:
 	ACraftingMachineBase();
 	ACraftingMachineBase(ECraftingMachineType MachineType) : MachineType(MachineType){}
 
-	virtual void OnInteract() override;
+	virtual void OnInteract(AActor* InteractInstigator) override;
 	virtual FText GetInteractionText() override;
 
 	UFUNCTION()

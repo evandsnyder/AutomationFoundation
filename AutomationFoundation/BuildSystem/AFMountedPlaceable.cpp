@@ -1,6 +1,5 @@
 ﻿#include "AFMountedPlaceable.h"
 
-#include "IPlaceable.h"
 #include "MountComponent.h"
 
 bool AAFMountedPlaceable::IsValidPlacement() const
@@ -10,10 +9,10 @@ bool AAFMountedPlaceable::IsValidPlacement() const
 
 void AAFMountedPlaceable::OnItemPlaced(AActor* NewActor) const
 {
-	if (IPlaceable* Placeable = Cast<IPlaceable>(NewActor))
-	{
-		Placeable->OnPlaced(MountTarget);
-	}
+	// if (IPlaceable* Placeable = Cast<IPlaceable>(NewActor))
+	// {
+	// 	Placeable->OnPlaced(MountTarget);
+	// }
 }
 
 void AAFMountedPlaceable::UpdatePosition(const FHitResult& HitResult, float GridSnapSize)

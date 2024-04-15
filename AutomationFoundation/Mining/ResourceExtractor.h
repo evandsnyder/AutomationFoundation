@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "AutomationFoundation/BuildSystem/IPlaceable.h"
 #include "AutomationFoundation/Crafting/CraftingMachineType.h"
 #include "AutomationFoundation/Crafting/RecipeSpecification.h"
 #include "AutomationFoundation/Interaction/IInteractable.h"
@@ -18,7 +17,7 @@ class AResourceNode;
  */
 
 UCLASS()
-class AResourceExtractor : public AActor, public IPlaceable, public IItemProvider, public IInteractable
+class AResourceExtractor : public AActor, public IItemProvider, public IInteractable
 {
 	GENERATED_BODY()
 
@@ -72,9 +71,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetCraftingProgress() const;
 
-	virtual void OnPlaced(AActor* PlacedOnActor) override;
+	virtual void OnPlaced(AActor* PlacedOnActor);
 
-	virtual void OnInteract() override;
+	virtual void OnInteract(AActor* InteractInstigator) override;
 	virtual FText GetInteractionText() override;
 
 private:

@@ -1,7 +1,5 @@
 ﻿#include "AFPlaceablePreview.h"
 
-#include "BuildingSpecification.h"
-#include "IPlaceable.h"
 #include "AutomationFoundation/Inventory/ItemSpecification.h"
 
 AAFPlaceablePreview::AAFPlaceablePreview()
@@ -61,10 +59,10 @@ bool AAFPlaceablePreview::TryPlaceItem() const
 
 void AAFPlaceablePreview::OnItemPlaced(AActor* NewActor) const
 {
-	if (IPlaceable* Placeable = Cast<IPlaceable>(NewActor))
-	{
-		Placeable->OnPlaced();
-	}
+	// if (IPlaceable* Placeable = Cast<IPlaceable>(NewActor))
+	// {
+	// 	Placeable->OnPlaced();
+	// }
 }
 
 void AAFPlaceablePreview::Tick(float DeltaSeconds)

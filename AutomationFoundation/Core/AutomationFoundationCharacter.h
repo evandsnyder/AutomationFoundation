@@ -11,7 +11,7 @@
 #include "AutomationFoundationCharacter.generated.h"
 
 class UBuildShelfComponent;
-class AAFPreview;
+class APlaceable;
 class UEnhancedInputLocalPlayerSubsystem;
 class UCameraComponent;
 class UInputComponent;
@@ -134,7 +134,7 @@ class AAutomationFoundationCharacter : public ACharacter
 	EPlayerMode PlayerMode = EPlayerMode::Default;
 
 	UPROPERTY()
-	TObjectPtr<AAFPreview> PlaceableActor = nullptr;
+	TObjectPtr<APlaceable> PlaceableActor = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category="Build Mode")
 	TSubclassOf<AAFPlaceablePreview> PlaceableClass;
@@ -229,10 +229,10 @@ public:
 	void ExitBuildMode();
 
 	void RefreshBuildLocation();
-	
+
 	UFUNCTION()
 	void RefreshBuildItem(int32 ActiveToolbarSlot);
 
 private:
-	FHitResult FindBuildModeLocation() const;
+	FHitResult FindBuildModeLocation(ECollisionChannel CollisionChannel = ECC_Visibility) const;
 };

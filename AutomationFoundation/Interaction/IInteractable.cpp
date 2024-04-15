@@ -1,6 +1,6 @@
 ﻿#include "IInteractable.h"
 
-void IInteractable::OnInteract()
+void IInteractable::OnInteract(AActor* InteractInstigator)
 {
 	unimplemented();
 }

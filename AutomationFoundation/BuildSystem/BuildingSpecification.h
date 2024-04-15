@@ -2,7 +2,7 @@
 
 #include "BuildingSpecification.generated.h"
 
-class AAFPreview;
+class APlaceable;
 
 UCLASS(BlueprintType)
 class UBuildingSpecification : public UDataAsset
@@ -16,7 +16,7 @@ public:
 
 	// This is the preview class to use
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
-	TSubclassOf<AAFPreview> PreviewClass;
+	TSubclassOf<APlaceable> PreviewClass;
 
 	// This is the actor that will spawn...
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")

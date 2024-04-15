@@ -3,3 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+
+inline ETraceTypeQuery ETT_AF_Deconstruct = UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel1);
+inline ETraceTypeQuery ETT_AF_General = UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel2);
+
+inline ECollisionChannel ECC_AF_Deconstruct = ECC_GameTraceChannel1;
+inline ECollisionChannel ECC_AF_General = ECC_GameTraceChannel2;

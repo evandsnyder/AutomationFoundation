@@ -5,7 +5,7 @@ ACraftingMachineBase::ACraftingMachineBase()
 	MachineType = ECraftingMachineType::Unknown;
 }
 
-void ACraftingMachineBase::OnInteract()
+void ACraftingMachineBase::OnInteract(AActor* InteractInstigator)
 {
 }
 
