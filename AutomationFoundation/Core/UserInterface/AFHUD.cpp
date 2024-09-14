@@ -87,6 +87,12 @@ void AAFHUD::ToggleExtractionMachine()
 	InventoryWidget->OnOpenExtractionMachine();
 }
 
+void AAFHUD::ToggleStorage()
+{
+	ToggleWidget(InventoryWidget);
+	InventoryWidget->OnOpenStorage();
+}
+
 void AAFHUD::EnterBuildMode()
 {
 	if (!IsValid(BuildToolbar))
@@ -95,12 +101,12 @@ void AAFHUD::EnterBuildMode()
 		BuildToolbar->AddToViewport();
 	}
 	ToolbarWidget->SetVisibility(ESlateVisibility::Collapsed);
-	BuildToolbar->SetVisibility(ESlateVisibility::Visible);
+	BuildToolbar->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
 void AAFHUD::ExitBuildMode()
 {
-	ToolbarWidget->SetVisibility(ESlateVisibility::Visible);
+	ToolbarWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	BuildToolbar->SetVisibility(ESlateVisibility::Collapsed);
 }
 
@@ -133,5 +139,5 @@ void AAFHUD::FocusWidget() const
 		PlayerController->SetShowMouseCursor(true);
 	}
 
-	FocusTarget->WidgetActivated();
+	FocusTarget->WidgetActivated_Implementation();
 }

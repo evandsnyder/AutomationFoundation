@@ -3,14 +3,15 @@
 #include "CoreMinimal.h"
 #include "CraftingMachineBase.h"
 #include "RecipeSpecification.h"
-#include "AutomationFoundation/Interaction/IInteractable.h"
+#include "AutomationFoundation/Interaction/ICanInteract.h"
+#include "AutomationFoundation/Interaction/IInteract.h"
 #include "AutomationFoundation/Inventory/IItemAcceptor.h"
 #include "AutomationFoundation/Inventory/IItemProvider.h"
 #include "AutomationFoundation/Inventory/InventoryItemInstance.h"
 #include "CraftingMachine.generated.h"
 
 UENUM(BlueprintType)
-enum class EMachineStatus
+enum class EMachineStatus : uint8
 {
 	Unknown,
 	NoRecipeSet,
@@ -21,13 +22,15 @@ enum class EMachineStatus
 };
 
 UCLASS(BlueprintType, Blueprintable)
-class ACraftingMachine : public ACraftingMachineBase, public IItemAcceptor, public IItemProvider
+class ACraftingMachine : public ACraftingMachineBase, public IItemAcceptor, public IItemProvider, public ICanInteract, public IInteract
 {
 	GENERATED_BODY()
 
+	TObjectPtr<class AAutomationFoundationCharacter> PlayerCharacter;
+
 public:
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
-	FRecipeSpecification CurrentRecipe;
+	UPROPERTY(EditAnywhere)
+	URecipeSpecification* CurrentRecipe;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	bool bIsCrafting;
@@ -43,45 +46,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FTimerHandle CraftingTimer;
 
-private:
-	TObjectPtr<class AAutomationFoundationCharacter> PlayerCharacter;
-
-public:
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* Mesh;
-
-	UPROPERTY(EditDefaultsOnly)
-	class UBoxComponent* InteractBox;
-
 	ACraftingMachine();
 
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-	void SetCraftingRecipe(const FRecipeSpecification& NewRecipe);
+	void SetCraftingRecipe(URecipeSpecification* NewRecipe);
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnCraftingComplete();
 
-
-	virtual void OnInteract(AActor* InteractInstigator) override;
-
-	virtual FText GetInteractionText() override;
-
-	UFUNCTION()
-	virtual void BeginOverlap(
-		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
-		bool bFromSweep, const FHitResult& SweepResult
-	);
-
-	UFUNCTION()
-	virtual void EndOverlap(
-		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex
-	);
-
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void OnInputItemAdded(UInventoryItemInstance* NewItem, int32 ItemIndex);
 
 	UFUNCTION()
@@ -99,10 +74,15 @@ public:
 	float GetCraftingProgress() const;
 
 	UFUNCTION()
-	virtual UInventoryComponent* GetAcceptorInventory() final override;
+	virtual UInventoryComponent* GetAcceptorInventory_Implementation() final override;
 
 	UFUNCTION()
-	virtual UInventoryComponent* GetProviderInventory() final override;
+	virtual UInventoryComponent* GetProviderInventory_Implementation() final override;
+
+	virtual FString GetInteractText() override;
+	virtual bool ShouldGetOtherActorToInteractWith() override;
+
+	virtual void Interact_Implementation(AActor* OtherActor) override;
 
 private:
 	void StartCrafting();

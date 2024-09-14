@@ -14,7 +14,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	FName BuildingID;
 
-	// This is the preview class to use
+	// TODO: Should combine this and the ActorClass. No need for both
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	TSubclassOf<APlaceable> PreviewClass;
 

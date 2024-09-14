@@ -26,6 +26,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UAFUserWidget> ExtractorInterfaceClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UAFUserWidget> StorageInterfaceClass;
+
 	// MUST have the Inventory and the Switcher.
 	// We will dynamically add the Crafting Machine and the InventoryCrafting Interface
 	UPROPERTY(meta=(BindWidget))
@@ -44,6 +47,9 @@ protected:
 	UAFUserWidget* ExtractionMachineWidget;
 
 	UPROPERTY()
+	UAFUserWidget* StorageWidget;
+
+	UPROPERTY()
 	AAutomationFoundationCharacter* OwningCharacter;
 	UPROPERTY()
 	UInventoryComponent* InventoryComponent;
@@ -55,6 +61,7 @@ public:
 	void OnOpenCraftingMachine();
 	void OnOpenPlayerInventory();
 	void OnOpenExtractionMachine();
+	void OnOpenStorage();
 
-	virtual void WidgetActivated() override;
+	virtual void WidgetActivated_Implementation() override;
 };

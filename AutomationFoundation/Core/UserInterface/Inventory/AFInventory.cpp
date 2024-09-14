@@ -31,6 +31,11 @@ void UAFInventory::Refresh()
 {
 	InventoryGrid->ClearChildren();
 	// Need to rebuild and re-populate all of our inventory pieces...
+	if (!IsValid(InventoryComponent))
+	{
+		LOG_WARNING(LogTemp, "Inventory Is Invalid");
+		return;
+	}
 	for (int32 i = 0; i < InventoryComponent->GetInventorySize(); i++)
 	{
 		UAFInventorySlot* InventorySlot = CreateWidget<UAFInventorySlot>(this, InventorySlotClass);
@@ -57,10 +62,4 @@ void UAFInventory::OnInventoryItemChanged_Implementation(UInventoryItemInstance*
 UInventoryComponent* UAFInventory::GetInventoryComponent() const
 {
 	return InventoryComponent;
-}
-
-void UAFInventory::WidgetActivated()
-{
-	Super::WidgetActivated();
-	Refresh();
 }

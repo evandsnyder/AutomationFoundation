@@ -9,7 +9,7 @@ class UInventoryItemInstance : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Meta=(ExposeOnSpawn=true))
 	UItemSpecification* ItemSpecification;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

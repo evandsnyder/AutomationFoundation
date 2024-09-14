@@ -32,24 +32,8 @@ void ASupportBeam::BeginPlay()
 	SetAllMaterialOverlays(HologramMaterial);
 }
 
-bool ASupportBeam::PlacePreview()
+bool ASupportBeam::PlacePreview_Implementation()
 {
-	// if (IsValid(BuildingSpecification))
-	// {
-	// 	const FVector Location = GetActorLocation();
-	// 	const FRotator Rotation = GetActorRotation();
-	// 	AActor* NewActor = GetWorld()->SpawnActor(BuildingSpecification->ActorClass, &Location, &Rotation);
-	// 	// Is there anything else that we need to do??
-	// 	// Such as configuring this...
-	// 	if (AConveyorSupportBeam* Beam = Cast<AConveyorSupportBeam>(NewActor))
-	// 	{
-	// 		// Make this super customizable somehow..
-	// 		Beam->GenerateMeshWithNewHeight(HeightOverride);
-	// 	}
-	// 	return true;
-	// }
-
-
 	// SetActorEnableCollision(ECollisionEnabled::QueryAndPhysics);
 	if (IsValid(SupportBase))
 	{
@@ -65,30 +49,29 @@ bool ASupportBeam::PlacePreview()
 	}
 
 	SetActorEnableCollision(true);
-	SetAllMaterialOverlays(nullptr, false);
-	return true;
+	return Super::PlacePreview_Implementation();
 }
 
-void ASupportBeam::CreatePreview()
+void ASupportBeam::CreatePreview_Implementation()
 {
 	GenerateMeshByHeight();
 	SetActorEnableCollision(ECollisionEnabled::NoCollision);
 }
 
-void ASupportBeam::ScrollPreview(float Value)
+void ASupportBeam::ScrollPreview_Implementation(float Value)
 {
 	const FRotator NewRotation = GetActorRotation() + FRotator(0.0f, 45.0f * Value, 0.0f);
 	SetActorRotation(NewRotation);
 }
 
-void ASupportBeam::CustomScrollPreview(float Value)
+void ASupportBeam::CustomScrollPreview_Implementation(float Value)
 {
 	HeightOverride += Value * 50.0f;
 	HeightOverride = FMath::Clamp(HeightOverride, 0.0f, 200.0f);
 	GenerateMeshByHeight();
 }
 
-void ASupportBeam::UpdateLocation(const FHitResult& HitResult)
+void ASupportBeam::UpdateLocation_Implementation(const FHitResult& HitResult)
 {
 	SetActorLocation(HitResult.Location.GridSnap(50.0f));
 }

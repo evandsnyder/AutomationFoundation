@@ -38,8 +38,11 @@ protected:
 	UPROPERTY()
 	float ItemInterval;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
 	UCurveFloat* FloatCurve;
+
+	UPROPERTY()
+	UTimelineComponent* TimelineComponent;
 
 private:
 	UPROPERTY()
@@ -49,9 +52,6 @@ private:
 	bool bHasReachedEnd;
 	UPROPERTY()
 	float TrackProgress;
-
-	UPROPERTY()
-	FTimeline MovementTimeline;
 
 	UPROPERTY()
 	FTimerHandle SpawnNextTimer;
@@ -81,7 +81,7 @@ public:
 	virtual void OnInteract(AActor* InteractInstigator) override;
 
 	UFUNCTION()
-	void TimelineTick(float InterpolationValue);
+	void TimelineTick();
 
 	UFUNCTION()
 	void BindEvents(AConveyorItem* NewItemInFront);

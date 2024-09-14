@@ -18,6 +18,8 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	virtual void WidgetActivated();
-	virtual void WidgetDeactivated();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void WidgetActivated();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void WidgetDeactivated();
 };

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ItemClassification.h"
+#include "EEquipType.h"
 #include "Engine/DataAsset.h"
 #include "ItemSpecification.generated.h"
 
@@ -23,7 +24,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	int32 MaxStackSize;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AActor> ActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
@@ -34,4 +35,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item", meta=(Bitmask, BitmaskEnum =  "/Script/AutomationFoundation.EItemClassification"))
 	int32 ItemClassificationFlags = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item", meta=(Bitmask, BitmaskEnum =  "/Script/AutomationFoundation.EEquipType"))
+	uint8 EquipmentType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	TSoftClassPtr<UAnimInstance> AnimationBlueprint;
 };

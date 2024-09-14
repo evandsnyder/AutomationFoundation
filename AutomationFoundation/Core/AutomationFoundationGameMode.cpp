@@ -3,13 +3,16 @@
 #include "AutomationFoundationGameMode.h"
 
 #include "AutomationFoundation/BuildSystem/BuildingSpecificationDataTableReference.h"
+#include "AutomationFoundation/Crafting/RecipeSpecificationDataTableReference.h"
 #include "UObject/ConstructorHelpers.h"
+
+class RecipeSpecificationDataTableReference;
 
 AAutomationFoundationGameMode::AAutomationFoundationGameMode()
 	: Super()
 {
 	// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/AutomationFoundation/Core/BP_AutomationFoundationCharacter"));
+	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/AutomationFoundation/Core/BP_CharacterRevamp.BP_CharacterRevamp"));
 	DefaultPawnClass = PlayerPawnClassFinder.Class;
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> RecipeDataBaseFinder(
@@ -37,17 +40,14 @@ bool AAutomationFoundationGameMode::FindItem(const FName& ItemID, FItemSpecifica
 	return false;
 }
 
-FRecipeSpecification AAutomationFoundationGameMode::FindRecipe_Implementation(FName RecipeID, bool& Success)
+bool AAutomationFoundationGameMode::FindRecipe_Implementation(FName RecipeID, FRecipeSpecificationDataTableReference& InRecipe)
 {
-	FRecipeSpecification Result{};
-	const FRecipeSpecification* ResultPtr = RecipeDatabase->FindRow<FRecipeSpecification>(RecipeID, "");
-
-	Success = ResultPtr != nullptr;
-
-	if (Success)
-		Result = *ResultPtr;
-
-	return Result;
+	if (const FRecipeSpecificationDataTableReference* ResultPtr = ItemDatabase->FindRow<FRecipeSpecificationDataTableReference>(RecipeID, ""); ResultPtr != nullptr)
+	{
+		InRecipe = *ResultPtr;
+		return true;
+	}
+	return false;
 }
 
 TArray<FItemSpecificationDataTableReference> AAutomationFoundationGameMode::FindAllItems()
@@ -62,71 +62,25 @@ TArray<FItemSpecificationDataTableReference> AAutomationFoundationGameMode::Find
 	return Result;
 }
 
-TArray<FRecipeSpecification> AAutomationFoundationGameMode::FindAllRecipes(
+TArray<URecipeSpecification*> AAutomationFoundationGameMode::FindAllRecipes(
 	ECraftingMachineFilterType MachineFilterType)
 {
-	TArray<FRecipeSpecification> Result;
-
-	switch (MachineFilterType)
-	{
-	case ECraftingMachineFilterType::All:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
+	TArray<URecipeSpecification*> Result;
+	ECraftingMachineType FilterType = ConvertFilterToType(MachineFilterType);
+	// Let's get all recipes and then filter..
+	RecipeDatabase->ForeachRow<FRecipeSpecificationDataTableReference>(
+		"", [&](const FName& RowName, const FRecipeSpecificationDataTableReference& Specification)
+		{
+			URecipeSpecification* Recipe = Specification.RecipeSpecificationRef.LoadSynchronous();
+			if (MachineFilterType == ECraftingMachineFilterType::InventoryOnly && Recipe->bCanCraftInPlayerInventory)
 			{
-				Result.Add(Specification);
-			});
-		break;
-	case ECraftingMachineFilterType::Basic:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
+				Result.Add(Recipe);
+			}
+			if (MachineFilterType == ECraftingMachineFilterType::All || Recipe->CraftingMachineType == FilterType)
 			{
-				if (Specification.CraftingMachineType == ECraftingMachineType::Basic)
-				{
-					Result.Add(Specification);
-				}
-			});
-		break;
-	case ECraftingMachineFilterType::Chemical:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
-			{
-				if (Specification.CraftingMachineType == ECraftingMachineType::Chemical)
-				{
-					Result.Add(Specification);
-				}
-			});
-		break;
-	case ECraftingMachineFilterType::ResourceExtractor:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
-			{
-				if (Specification.CraftingMachineType == ECraftingMachineType::ResourceExtractor)
-				{
-					Result.Add(Specification);
-				}
-			});
-		break;
-	case ECraftingMachineFilterType::Smelter:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
-			{
-				if (Specification.CraftingMachineType == ECraftingMachineType::Smelter)
-				{
-					Result.Add(Specification);
-				}
-			});
-		break;
-	case ECraftingMachineFilterType::InventoryOnly:
-		RecipeDatabase->ForeachRow<FRecipeSpecification>(
-			"", [&](const FName& RowName, const FRecipeSpecification& Specification)
-			{
-				if (Specification.bCanCraftInPlayerInventory)
-				{
-					Result.Add(Specification);
-				}
-			});
-		break;
-	}
+				Result.Add(Recipe);
+			}
+		});
 
 	return Result;
 }
@@ -143,4 +97,25 @@ TArray<UBuildingSpecification*> AAutomationFoundationGameMode::FindAllBuildings(
 	});
 
 	return Buildings;
+}
+
+ECraftingMachineType AAutomationFoundationGameMode::ConvertFilterToType(ECraftingMachineFilterType FilterType)
+{
+	switch (FilterType)
+	{
+	case ECraftingMachineFilterType::All:
+		return ECraftingMachineType::Unknown;
+	case ECraftingMachineFilterType::Basic:
+		return ECraftingMachineType::Basic;
+	case ECraftingMachineFilterType::Chemical:
+		return ECraftingMachineType::Chemical;
+	case ECraftingMachineFilterType::ResourceExtractor:
+		return ECraftingMachineType::ResourceExtractor;
+	case ECraftingMachineFilterType::Smelter:
+		return ECraftingMachineType::Smelter;
+	case ECraftingMachineFilterType::InventoryOnly:
+		return ECraftingMachineType::Unknown;
+	}
+
+	return ECraftingMachineType::Unknown;
 }

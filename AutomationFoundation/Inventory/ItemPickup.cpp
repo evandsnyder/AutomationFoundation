@@ -31,45 +31,7 @@ void AItemPickup::ConfigureItemPickup(UInventoryItemInstance* ItemInstance)
 	}
 }
 
-void AItemPickup::OnPlayerBeginOverlap()
-{
-	if (PlayerCharacter)
-	{
-		// Show the Interact Prompt...
-		UE_LOG(LogTemp, Display, TEXT("Player Entered Interaction Zone"));
-		PlayerCharacter->ShowInteractPrompt();
-	}
-}
-
-void AItemPickup::OnPlayerEndOverlap()
-{
-	if (PlayerCharacter)
-	{
-		// Remove the Interact Prompt
-		UE_LOG(LogTemp, Display, TEXT("Player Left Interaction Zone"));
-		PlayerCharacter->HideInteractPrompt();
-	}
-}
-
 void AItemPickup::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-void AItemPickup::OnInteract_Implementation(AActor* InteractInstigator)
-{
-	if (PlayerCharacter)
-	{
-		if (PlayerCharacter->AddItemToInventory(Item))
-		{
-			// We can delete this actor..
-			Destroy();
-			OnItemCollected();
-		}
-	}
-}
-
-FText AItemPickup::GetInteractionText()
-{
-	return FText::FromString(TEXT("Press 'E' to collect item"));
 }

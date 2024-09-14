@@ -41,7 +41,7 @@ void AConveyorBelt::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if(IsValid(LastItemInQueue))
+	if (IsValid(LastItemInQueue))
 	{
 		LOG_INFO(LogTemp, "Last Item can Tick: %hs", LastItemInQueue->CanEverTick() ? "true" : "false");
 	}
@@ -50,9 +50,9 @@ void AConveyorBelt::Tick(float DeltaSeconds)
 /**
  * Configures the build mode preview of this object
  */
-void AConveyorBelt::CreatePreview()
+void AConveyorBelt::CreatePreview_Implementation()
 {
-	Super::CreatePreview();
+	Super::CreatePreview_Implementation();
 
 	check(IsValid(BeltSupportClass));
 
@@ -70,11 +70,11 @@ void AConveyorBelt::CreatePreview()
  * Determines whether or not this conveyor belt can be placed at a given position
  * @return whether this conveyor belt is placeable
  */
-bool AConveyorBelt::IsPlaceable()
+bool AConveyorBelt::IsPlaceable_Implementation()
 {
 	if (!bIsStartLockedIn)
 	{
-		return Super::IsPlaceable();
+		return Super::IsPlaceable_Implementation();
 	}
 
 	if (Spline->GetSplineLength() > 3000.f)
@@ -101,51 +101,26 @@ bool AConveyorBelt::IsPlaceable()
 		return false;
 	}
 
-	// TODO: Add collision detection for the belt itself
-	// for (USplineMeshComponent* SplineMesh : SplineMeshComponentsArray)
-	// {
-	// 	SplineMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	// 	FVector2D* CurrentData = SplineMeshComponents.Find(SplineMesh);
-	//
-	// 	// Hit Box 1
-	// 	FVector SplineStartPosition = SplineMesh->GetStartPosition();
-	// 	FVector TransformedPosition = GetActorTransform().TransformPosition(SplineStartPosition);
-	// 	FVector UpVector = Spline->GetUpVectorAtDistanceAlongSpline(CurrentData->X, ESplineCoordinateSpace::World);
-	// 	FVector Direction = Spline->GetDirectionAtDistanceAlongSpline(CurrentData->X, ESplineCoordinateSpace::World);
-	//
-	// 	FVector StartPosition = TransformedPosition + Direction + (UpVector * 5.0f);
-	// 	FVector EndPosition = StartPosition + (UpVector * 5.f);
-	//
-	// 	FRotator Orientation = FRotationMatrix::MakeFromXZ(UpVector, Direction).Rotator();
-	// 	FVector HalfSize{0.49f, 49.f, 1.f};
-	//
-	// 	TArray<FHitResult> HitResults;
-	//
-	// 	::DrawDebugSphere(GetWorld(), StartPosition, 32, 8, FColor::Emerald); // Start
-	// 	::DrawDebugSphere(GetWorld(), UpVector, 32, 8, FColor::Orange); // UpVector
-	// 	::DrawDebugSphere(GetWorld(), Direction, 32, 8, FColor::Purple); // Direction
-	// 	FCollisionQueryParams Params;
-	// 	Params.bTraceComplex = true;
-	// 	Params.AddIgnoredActor(StartSupport);
-	// 	Params.AddIgnoredActor(EndSupport);
-	// 	::DrawDebugBox(GetWorld(), StartPosition, EndPosition, FColor::Magenta);
-	// 	if (GetWorld()->SweepMultiByChannel(HitResults,
-	// 	                                    StartPosition,
-	// 	                                    EndPosition,
-	// 	                                    Orientation.Quaternion(),
-	// 	                                    ECC_Visibility,
-	// 	                                    FCollisionShape::MakeBox(HalfSize),
-	// 	                                    Params))
-	// 	{
-	// 		return false;
-	// 	}
-	//
-	// 	break;
-	//
-	// 	// Hit Box 2
-	//
-	// 	SplineMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	// }
+	FVector ForwardDirection = FVector(1.0f, 0.0f, 0.0f);
+	for (auto& [CurrentSplineMesh,Value] : SplineMeshComponents)
+	{
+		FVector NormalizedDistanceBetween = CurrentSplineMesh->GetStartPosition() - CurrentSplineMesh->GetEndPosition();
+		NormalizedDistanceBetween.Normalize();
+
+		const float DistanceBetweenAngles = FMath::Abs(ForwardDirection.Dot(NormalizedDistanceBetween));
+		if (DistanceBetweenAngles < 0.6f) return false;
+
+		ForwardDirection = NormalizedDistanceBetween;
+	}
+
+	// TODO: this doesn't work 
+	if(IsValid(OtherStartAttachPoint) && IsValid(OtherEndAttachPoint))
+	{
+		if(OtherStartAttachPoint->GetDirection() == OtherEndAttachPoint->GetDirection())
+		{
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -153,12 +128,12 @@ bool AConveyorBelt::IsPlaceable()
 /**
  * Cancels placing this conveyor belt
  */
-void AConveyorBelt::CancelPreview()
+void AConveyorBelt::CancelPreview_Implementation()
 {
 	if (IsValid(StartSupport)) StartSupport->Destroy();
 	if (IsValid(EndSupport)) EndSupport->Destroy();
 
-	Super::CancelPreview();
+	Super::CancelPreview_Implementation();
 }
 
 /**
@@ -166,7 +141,7 @@ void AConveyorBelt::CancelPreview()
  * If the start support beam has not been placed yet, we will lock its position and start placing the end support beamzs
  * @param HitResult Describes the raycast hit location that should be used for the placement
  */
-void AConveyorBelt::UpdateLocation(const FHitResult& HitResult)
+void AConveyorBelt::UpdateLocation_Implementation(const FHitResult& HitResult)
 {
 	if (!bIsStartLockedIn)
 	{
@@ -299,7 +274,7 @@ void AConveyorBelt::UpdateEndLocation(const FHitResult& HitResult)
  * Rotates the start support beam or the end support beam if the start is already placed
  * @param Value Scroll value
  */
-void AConveyorBelt::ScrollPreview(float Value)
+void AConveyorBelt::ScrollPreview_Implementation(float Value)
 {
 	if (bIsStartLockedIn)
 	{
@@ -315,7 +290,7 @@ void AConveyorBelt::ScrollPreview(float Value)
  * If the Start support beam has not been placed yet, it will lock in it's position and start updating the end support beam
  * @return Returns true if the belt was fully placed successfully. 
  */
-bool AConveyorBelt::PlacePreview()
+bool AConveyorBelt::PlacePreview_Implementation()
 {
 	if (bIsStartLockedIn)
 	{
@@ -390,18 +365,14 @@ bool AConveyorBelt::PlaceEndSupport()
 		Entry.Key->SetCollisionResponseToAllChannels(ECR_Block);
 	}
 
-	SetAllMaterialOverlays(nullptr, true);
-
 	PlaceSupport(StartSupport);
 	PlaceSupport(EndSupport);
 
 	CreateAttachPoints();
 
-	// TODO: Set material flow and direction correctly here
-
 	SetupLinkedBuilds();
 
-	return true;
+	return Super::PlacePreview_Implementation();
 }
 
 /**
@@ -480,27 +451,26 @@ void AConveyorBelt::UpdateSplineShape() const
 	if (X >= 50.0f || X <= 100.0f)
 	{
 		HandleShortUTurnBelt();
-		return;
 	}
 
 	return;
 
-	PointCount = Spline->GetNumberOfSplinePoints();
-	if (PointCount < 6)
-	{
-		GetSplineInformation(0, ESplineCoordinateSpace::Local, SplineTransform, SplineTangent, SplineForwardVector);
-		Spline->AddSplinePoint(SplineTransform.GetLocation() + (SplineForwardVector * -100.0f), ESplineCoordinateSpace::Local);
-	}
-
-	GetRelativeLocation(X, Y);
-	if (X > 100.0f)
-	{
-		HandleLongUTurnBelt();
-	}
-	else
-	{
-		HandleMidUTurnBelt();
-	}
+	// PointCount = Spline->GetNumberOfSplinePoints();
+	// if (PointCount < 6)
+	// {
+	// 	GetSplineInformation(0, ESplineCoordinateSpace::Local, SplineTransform, SplineTangent, SplineForwardVector);
+	// 	Spline->AddSplinePoint(SplineTransform.GetLocation() + (SplineForwardVector * -100.0f), ESplineCoordinateSpace::Local);
+	// }
+	//
+	// GetRelativeLocation(X, Y);
+	// if (X > 100.0f)
+	// {
+	// 	HandleLongUTurnBelt();
+	// }
+	// else
+	// {
+	// 	HandleMidUTurnBelt();
+	// }
 }
 
 /**
@@ -581,7 +551,8 @@ void AConveyorBelt::UpdateSplineVisual()
 
 	StaticMesh = nullptr;
 
-	for (int i = SplineMeshComponentsArray.Num() - 1; i > CurrentIndex; i--)
+	// TODO: Fix left-over artifact
+	for (int i = SplineMeshComponentsArray.Num() - 1; i >= CurrentIndex; i--)
 	{
 		CurrentSplineMesh = SplineMeshComponentsArray[i];
 		SplineMeshComponentsArray.RemoveAt(i);
@@ -741,6 +712,13 @@ void AConveyorBelt::HandleLongUTurnBelt() const
 void AConveyorBelt::CreateAttachPoints()
 {
 	// Spawn the Start Point
+	// The Start point is associated with the first end of the belt that was placed. However, it does not have any bearing on whether the direction
+	// is an input or an output. This will be determined by whether the "Other" attach point (start or end??) is valid
+
+	// the "Other" in this case refers to the AP aligned with whichever end of the belt we are working on.
+	// the OtherStartAttachPoint is actually an AttachPoint owned by another actor that is connected to our StartPoint
+	// a better name for it may be "StartPointTargetAttachPoint" or something similar
+	LOG_INFO(LogTemp, "Creating Start Attach Point");
 	check(IsValid(AttachPointClass));
 	const FVector StartPointLocation = Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World);
 	const FRotator StartPointRotation = Spline->GetRotationAtSplinePoint(0, ESplineCoordinateSpace::World) + FRotator(0.0f, 180.0f, 0.0f);
@@ -753,10 +731,19 @@ void AConveyorBelt::CreateAttachPoints()
 
 	if (IsValid(OtherStartAttachPoint))
 	{
-		OtherStartAttachPoint->TryLinkConnectedBuilds(MyStartAttachPoint);
+		if(OtherStartAttachPoint->TryLinkConnectedBuilds(MyStartAttachPoint))
+		{
+			// We can actually go ahead and configure directions..
+			if(OtherStartAttachPoint->GetDirection() == EBuildDirection::Output)
+			{
+				EndDirection = EBuildDirection::Output;
+				StartDirection = InvertDirection(EndDirection);
+			}
+		}
 	}
 
 	// Spawn the End Point...
+	LOG_INFO(LogTemp, "Creating End Attach Point");
 	const int32 LastSplinePoint = GetLastSplinePoint();
 	const FVector EndPointLocation = Spline->GetLocationAtSplinePoint(LastSplinePoint, ESplineCoordinateSpace::World);
 	const FRotator EndPointRotation = Spline->GetRotationAtSplinePoint(LastSplinePoint, ESplineCoordinateSpace::World);
@@ -764,6 +751,8 @@ void AConveyorBelt::CreateAttachPoints()
 	MyEndAttachPoint = Cast<AAttachPoint>(GetWorld()->SpawnActor(AttachPointClass, &EndPointLocation, &EndPointRotation));
 	MyEndAttachPoint->SetParentBuild(this);
 	MyEndAttachPoint->AttachToActor(this, AttachmentRules);
+
+	// We're setting the directions here
 
 	// Check if this is connected to the end of another belt
 	if (IsValid(OtherEndAttachPoint))
@@ -848,6 +837,9 @@ void AConveyorBelt::SetupLinkedBuilds()
 	LOG_INFO(LogTemp, "Starting Build Link");
 
 	SetupLinkedAttachPoint(OtherStartAttachPoint);
+
+	LOG_INFO(LogTemp, "Other Start Attach Point completed. Working On Other End Attach Point")
+
 	SetupLinkedAttachPoint(OtherEndAttachPoint);
 
 	LOG_INFO(LogTemp, "Build Linking Completed...");
@@ -857,7 +849,7 @@ void AConveyorBelt::SetupLinkedAttachPoint(AAttachPoint* AttachPoint)
 {
 	if (!IsValid(AttachPoint))
 	{
-		LOG_WARNING(LogTemp, "AttachPoint is Invalid");
+		LOG_WARNING(LogTemp, "AttachPoint is Invalid. This means we aren't connected to anthing");
 		return;
 	}
 
@@ -886,12 +878,18 @@ void AConveyorBelt::SetupLinkedAttachPoint(AAttachPoint* AttachPoint)
 		// Get the first item on the conveyor belt..
 		if (ConveyorBelt->ItemsOnConveyor.IsEmpty())
 		{
+			// The other end of my conveyor belt is empty... so I don't care to try to move items onto me
 			return;
 		}
 		AConveyorItem* FirstItem = ConveyorBelt->ItemsOnConveyor[0];
-		if (AttachPoint->GetDirection() == EBuildDirection::Input && FirstItem->HasReachedEnd())
+		// If the other is output and we are input, then we want to move the items..
+		if (AttachPoint->GetDirection() == EBuildDirection::Output && FirstItem->HasReachedEnd())
 		{
-			MoveItemToNextConveyor(FirstItem);
+			ConveyorBelt->MoveItemToNextConveyor(FirstItem);
+		}
+		else
+		{
+			LOG_WARNING(LogTemp, "We are not moving an item to the next belt");
 		}
 	}
 }
@@ -971,15 +969,17 @@ bool AConveyorBelt::IsOutputConnected() const
  */
 void AConveyorBelt::MoveItemToNextConveyor(AConveyorItem* MovedItem)
 {
-	ItemsOnConveyor.Remove(MovedItem);
+	LOG_ERROR(LogTemp, "Moving item to next conveyor");
 
 	FBuildInformation BuildInformation;
-	if (GetNextBuild(BuildInformation))
+	bool bHasNextBuild = GetNextBuild(BuildInformation);
+	if (bHasNextBuild)
 	{
 		if (AConveyorBelt* Belt = Cast<AConveyorBelt>(BuildInformation.Build))
 		{
 			Belt->AddItemToConveyor(MovedItem);
 			MovedItem->SetupTimeline(Belt);
+			ItemsOnConveyor.Remove(MovedItem);
 		}
 	}
 }
@@ -1150,7 +1150,7 @@ bool AConveyorBelt::GetPreviousBuild(FBuildInformation& OutBuildInformation)
  * Handles custom scrolling on the conveyor belt. In this case, it will raise or lower the start or end support
  * @param Value 
  */
-void AConveyorBelt::CustomScrollPreview(float Value)
+void AConveyorBelt::CustomScrollPreview_Implementation(float Value)
 {
 	if (bIsStartLockedIn)
 	{
@@ -1162,9 +1162,9 @@ void AConveyorBelt::CustomScrollPreview(float Value)
 	}
 }
 
-void AConveyorBelt::SetAllMaterialOverlays(UMaterialInterface* MaterialOverlay, bool bRemoveOverlay)
+void AConveyorBelt::SetAllMaterialOverlays_Implementation(UMaterialInterface* MaterialOverlay, bool bRemoveOverlay)
 {
-	Super::SetAllMaterialOverlays(MaterialOverlay, bRemoveOverlay);
+	Super::SetAllMaterialOverlays_Implementation(MaterialOverlay, bRemoveOverlay);
 }
 
 USplineComponent* AConveyorBelt::GetSpline() const

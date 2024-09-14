@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "InventoryItemInstance.h"
+#include "AutomationFoundation/Crafting/RecipeSpecification.h"
 #include "InventoryComponent.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInventoryComponent, Log, All)
@@ -57,6 +58,23 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UInventoryItemInstance* FindFirstItem(int32& Index) const;
+
+	UFUNCTION(BlueprintCallable)
+	void ConfigureInventoryFromRecipe(URecipeSpecification* NewRecipe, bool bIsInput = true)
+	{
+		ResetFilters();
+		TMap<FName, int32>& Map = bIsInput ? NewRecipe->InputItems : NewRecipe->OutputItems;
+
+		// TODO: Add method for emptying the inventory either into a player inventory or into the world
+		SetInventorySize(Map.Num());
+
+		int32 i = 0;
+		for (const TPair<FName, int32>& Entry : Map)
+		{
+			AddInventoryFilter(Entry.Key, i);
+			i++;
+		}
+	}
 
 private:
 	bool HasAvailableSpace() const;

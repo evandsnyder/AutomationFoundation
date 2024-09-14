@@ -12,13 +12,11 @@ ATurretBase::ATurretBase()
 {
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Turret Mesh"));
 	// Mesh->SetupAttachment(RootComponent);
-	RootComponent = Mesh;
+	SetRootComponent(Mesh);
 
 	DetectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Detection Sphere"));
 	DetectionSphere->SetupAttachment(RootComponent);
 	DetectionSphere->SetSphereRadius(DetectionRange);
-	DetectionSphere->OnComponentBeginOverlap.AddDynamic(this, &ATurretBase::OnDetectActor);
-	DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &ATurretBase::OnDetectActorEnd);
 
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
 	HealthComponent->OnHealthChanged.AddDynamic(this, &ATurretBase::OnHealthChanged);
@@ -51,15 +49,29 @@ void ATurretBase::OnDetectActorEnd(UPrimitiveComponent* OverlappedComponent, AAc
 	if (OtherActor->ActorHasTag("Enemy"))
 	{
 		LOG_INFO(LogTurret, "Enemy Lost");
-		OnEnemyDetectedEnd();
+		OnEnemyDetectedEnd(OtherActor);
 	}
+}
+
+void ATurretBase::OnEnemyKilled_Implementation(AActor* EnemyUnit)
+{
+}
+
+bool ATurretBase::PlacePreview_Implementation()
+{
+	DetectionSphere->OnComponentBeginOverlap.AddDynamic(this, &ATurretBase::OnDetectActor);
+	DetectionSphere->OnComponentEndOverlap.AddDynamic(this, &ATurretBase::OnDetectActorEnd);
+
+	// Enable collision again!
+	
+	return Super::PlacePreview_Implementation();
 }
 
 void ATurretBase::OnEnemyDetectedBegin_Implementation(AActor* EnemyActor)
 {
 }
 
-void ATurretBase::OnEnemyDetectedEnd_Implementation()
+void ATurretBase::OnEnemyDetectedEnd_Implementation(AActor* EnemyActor)
 {
 }
 

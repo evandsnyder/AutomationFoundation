@@ -14,5 +14,6 @@ class IItemProvider
 {
 	GENERATED_BODY()
 public:
-	virtual UInventoryComponent* GetProviderInventory();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	UInventoryComponent* GetProviderInventory();
 };

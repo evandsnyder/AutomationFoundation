@@ -1,9 +1,6 @@
 ﻿#pragma once
+#include "AutomationFoundation/BuildSystem/Buildables/Machine.h"
 #include "AutomationFoundation/Crafting/CraftingMachineType.h"
-#include "AutomationFoundation/Crafting/RecipeSpecification.h"
-#include "AutomationFoundation/Interaction/IInteractable.h"
-#include "AutomationFoundation/Inventory/IItemProvider.h"
-#include "AutomationFoundation/Inventory/InventoryComponent.h"
 
 #include "ResourceExtractor.generated.h"
 
@@ -11,74 +8,36 @@ class UBoxComponent;
 class AAutomationFoundationCharacter;
 class AResourceNode;
 
-/**
- * We could make this class inherit from the Crafting Machine, but the Crafting Machine has a lot
- * of extra fluff that we don't really need (for now) such as ingredient inputs and so forth
- */
-
 UCLASS()
-class AResourceExtractor : public AActor, public IItemProvider, public IInteractable
+class AResourceExtractor : public AMachine
 {
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY()
-	TWeakObjectPtr<AResourceNode> ResourceNode;
-
 	UPROPERTY(BlueprintReadOnly)
 	ECraftingMachineType MachineType = ECraftingMachineType::ResourceExtractor;
 
-	UPROPERTY()
-	FRecipeSpecification CurrentRecipe;
-
 	UPROPERTY(BlueprintReadOnly)
-	UInventoryComponent* OutputInventory;
+	UInventoryComponent* Inventory;
 
-	UPROPERTY(BlueprintReadOnly)
-	FTimerHandle MiningTimerHandle;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float MiningTime = 1.0f;
-
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsMining = false;
-
-	UPROPERTY(EditDefaultsOnly)
-	UBoxComponent* InteractBox;
 	TWeakObjectPtr<AAutomationFoundationCharacter> PlayerCharacter;
 
 public:
-	UFUNCTION()
-	void BeginActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void EndActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
 	AResourceExtractor();
-
-	UFUNCTION(BlueprintCallable)
-	void OnExtractorPlaced(AResourceNode* TargetResourceNode);
-
-	UFUNCTION()
-	void OnMiningCycleComplete();
 
 	UFUNCTION()
 	void OnOutputItemRemoved(UInventoryItemInstance* OldItem, int32 ItemIndex);
 
 	UFUNCTION()
-	virtual UInventoryComponent* GetProviderInventory() override;
+	virtual UInventoryComponent* GetProviderInventory_Implementation() override;
+	virtual UInventoryComponent* GetAcceptorInventory_Implementation() override;
 
-	UFUNCTION(BlueprintCallable)
-	float GetCraftingProgress() const;
+	virtual bool IsPlaceable_Implementation() override;
+	virtual void UpdateLocation_Implementation(const FHitResult& HitResult) override;
 
-	virtual void OnPlaced(AActor* PlacedOnActor);
+	virtual void CreatePreview_Implementation() override;
+	virtual void ScrollPreview_Implementation(float Value) override;
+	virtual void OnPreviewPlaced_Implementation() override;
 
-	virtual void OnInteract(AActor* InteractInstigator) override;
-	virtual FText GetInteractionText() override;
-
-private:
-	void StartMining();
-	void StopMining();
-
-	bool IsOutputFull() const;
+	virtual bool CanOutput_Implementation() override;
 };

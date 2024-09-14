@@ -1,7 +1,6 @@
 ﻿#include "EnemyCharacterBase.h"
 
 #include "AutomationFoundation/Components/HealthComponent.h"
-#include "AutomationFoundation/Core/AutomationFoundationUtilities.h"
 #include "AutomationFoundation/UserInterface/AFUWHealthBar.h"
 #include "Components/WidgetComponent.h"
 
@@ -39,11 +38,18 @@ void AEnemyCharacterBase::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+void AEnemyCharacterBase::OnHomeBaseDestroyed()
+{
+	// TODO: What now??
+	// Find another base and try to start guarding that one???
+}
+
 
 void AEnemyCharacterBase::OnHealthChanged(AActor* InInstigator, UHealthComponent* OwningComponent, float UpdatedHealth, float Delta)
 {
 	if (!HealthComponent->IsAlive())
 	{
+		OnDeath.Broadcast(this);
 		Destroy();
 	}
 }

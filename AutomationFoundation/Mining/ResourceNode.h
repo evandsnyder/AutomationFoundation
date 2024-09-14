@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "AutomationFoundation/Inventory/ItemSpecification.h"
+#include "AutomationFoundation/Crafting/RecipeSpecification.h"
 
 #include "ResourceNode.generated.h"
 
@@ -11,11 +11,8 @@ class AResourceNode : public AActor
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	UMountComponent* ExtractorMountPoint;
-
-	UPROPERTY(EditDefaultsOnly)
-	UItemSpecification* HarvestedResource;
+	UPROPERTY(EditAnywhere)
+	URecipeSpecification* Recipe;
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
 	UStaticMeshComponent* VeinMesh;
@@ -27,5 +24,6 @@ protected:
 public:
 	AResourceNode();
 
-	UItemSpecification* GetHarvestedResource() const;
+	UFUNCTION(BlueprintCallable)
+	URecipeSpecification* GetHarvestedResource() const;
 };

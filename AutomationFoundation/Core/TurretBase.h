@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "AutomationFoundation/BuildSystem/Buildables/Placeable.h"
 #include "TurretBase.generated.h"
 
 // DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDetected, AActor*, Actor);
@@ -12,38 +13,18 @@ class UInventoryComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTurret, All, Log);
 
 UCLASS()
-class AUTOMATIONFOUNDATION_API ATurretBase : public AActor
+class AUTOMATIONFOUNDATION_API ATurretBase : public APlaceable
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Category=Mesh, VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMeshComponent> Mesh;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret, meta=(AllowPrivateAccess = "true"))
-	UInventoryComponent* InventoryComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret, meta=(AllowPrivateAccess = "true"))
-	UHealthComponent* HealthComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret, meta=(AllowPrivateAccess = "true"))
-	USphereComponent* DetectionSphere;
-
-protected:
-	UPROPERTY(EditDefaultsOnly)
-	float DetectionRange = 200.0f;
-
 public:
 	ATurretBase();
-	// virtual void BeginPlay() override;
-
-	// UPROPERTY()
-	// FOnEnemyDetected OnEnemyDetected;
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnEnemyDetectedBegin(AActor* EnemyActor);
 
 	UFUNCTION(BlueprintNativeEvent)
-	void OnEnemyDetectedEnd();
+	void OnEnemyDetectedEnd(AActor* EnemyActor);
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnHealthChanged(AActor* InInstigator,
@@ -58,6 +39,27 @@ public:
 	UFUNCTION()
 	void OnDetectActorEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int OtherBodyIndex);
 
+	UFUNCTION(BlueprintNativeEvent)
+	void OnEnemyKilled(AActor* EnemyUnit);
+
+	virtual bool PlacePreview_Implementation() override;
+
 private:
 	void InitiateDeathSequence();
+
+protected:
+	UPROPERTY(EditDefaultsOnly)
+	float DetectionRange = 200.0f;
+
+	UPROPERTY(Category=Mesh, VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USkeletalMeshComponent> Mesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret)
+	UInventoryComponent* InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret)
+	UHealthComponent* HealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Turret)
+	USphereComponent* DetectionSphere;
 };

@@ -2,6 +2,9 @@
 
 #include "AutomationFoundation/Core/UserInterface/Inventory/AFInventorySlot.h"
 #include "AutomationFoundation/Core/AutomationFoundationCharacter.h"
+#include "AutomationFoundation/Core/AutomationFoundationUtilities.h"
+#include "AutomationFoundation/Interaction/InteractComponent.h"
+#include "AutomationFoundation/Inventory/InventoryComponent.h"
 #include "AutomationFoundation/Mining/ResourceExtractor.h"
 #include "Components/ProgressBar.h"
 #include "Components/WrapBox.h"
@@ -10,16 +13,14 @@ void UAFUWResourceExtractor::NativeTick(const FGeometry& MyGeometry, float InDel
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if(OwningMachine.IsValid() && CraftingProgressBar)
+	if (OwningMachine.IsValid() && CraftingProgressBar)
 	{
 		CraftingProgressBar->SetPercent(OwningMachine->GetCraftingProgress());
 	}
 }
 
-void UAFUWResourceExtractor::WidgetActivated()
+void UAFUWResourceExtractor::WidgetActivated_Implementation()
 {
-	Super::WidgetActivated();
-
 	const AAutomationFoundationCharacter* Character = Cast<AAutomationFoundationCharacter>(GetOwningPlayerPawn());
 
 	if (!Character)
@@ -28,22 +29,31 @@ void UAFUWResourceExtractor::WidgetActivated()
 		return;
 	}
 
-	OwningMachine = Cast<AResourceExtractor>(Character->CurrentInteractableActor);
+	UInteractComponent* InteractComponent = Character->GetComponentByClass<UInteractComponent>();
+
+	if (!IsValid(InteractComponent))
+	{
+		LOG_WARNING(LogTemp, "Could not get the interact component from the player");
+		return;
+	}
+
+	OwningMachine = Cast<AResourceExtractor>(InteractComponent->GetInteractTarget());
 	if (!OwningMachine.IsValid())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not bind to Resource Extractor/Mining Drill. Invalid Actor pointer"));
 		return;
 	}
 
 	RefreshUI();
 }
 
-void UAFUWResourceExtractor::WidgetDeactivated()
+void UAFUWResourceExtractor::WidgetDeactivated_Implementation()
 {
 	Super::WidgetDeactivated();
 
 	if (OwningMachine.IsValid())
 	{
-		UInventoryComponent* Inventory = OwningMachine->GetProviderInventory();
+		UInventoryComponent* Inventory = IItemProvider::Execute_GetProviderInventory(OwningMachine.Get());
 		if (Inventory)
 		{
 			Inventory->OnItemChanged.RemoveDynamic(this, &UAFUWResourceExtractor::OnOutputItemUpdated);
@@ -68,13 +78,19 @@ void UAFUWResourceExtractor::RefreshUI()
 
 	OutputIngredientGrid->ClearChildren();
 
-	UInventoryComponent* Inventory = OwningMachine->GetProviderInventory();
+	UInventoryComponent* Inventory = IItemProvider::Execute_GetProviderInventory(OwningMachine.Get());
 	if (Inventory)
 	{
+		Inventory->OnItemChanged.RemoveAll(this);
 		Inventory->OnItemChanged.AddDynamic(this, &UAFUWResourceExtractor::OnOutputItemUpdated);
 	}
 
-	// assume we are only mining one resource...
+	// TODO: Update if there are any input items...
+
+	// OwningMachine->CurrentRecipe->OutputItems{
+	// }
+
+	// TODO: This works because we assume we are only mining one resource...
 	UAFInventorySlot* NewOutputWidget = CreateWidget<UAFInventorySlot>(this, InventorySlotWidget);
 	NewOutputWidget->SetItemSlot(0);
 	NewOutputWidget->SetOwningInventory(Inventory);

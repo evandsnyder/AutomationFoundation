@@ -32,9 +32,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnInventoryItemChanged(UInventoryItemInstance* ItemInstance, int32 ItemIndex);
 
-
 	UInventoryComponent* GetInventoryComponent() const;
 
-	virtual void WidgetActivated() override;
 	void Refresh();
 };

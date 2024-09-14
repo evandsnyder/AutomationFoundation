@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
 #include "PlayerMode.h"
-#include "AutomationFoundation/BuildSystem/AFMountedPlaceable.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "AutomationFoundationCharacter.generated.h"
 
+class UInteractComponent;
 class UBuildShelfComponent;
 class APlaceable;
 class UEnhancedInputLocalPlayerSubsystem;
@@ -33,101 +33,95 @@ class AAutomationFoundationCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta=(AllowPrivateAccess = "true"))
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	TObjectPtr<UCameraComponent> FirstPersonCamera;
 
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* HeadMesh;
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* BodyMesh;
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* LegMesh;
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* FeetMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh)
+	USkeletalMeshComponent* CharacterMesh;
 
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	USphereComponent* CollectionSphere;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory", meta=(AllowPrivateAccess ="true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory")
 	UInventoryComponent* InventoryComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory", meta=(AllowPrivateAccess="true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory")
 	TObjectPtr<UToolbarComponent> ToolbarComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Interaction")
+	TObjectPtr<UInteractComponent> InteractComponent;
 
 
 	/** MappingContext */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input)
 	UInputMappingContext* DefaultMappingContext;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input)
 	UInputMappingContext* BuildModeMappingContext;
 
 	/** Look Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* LookAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* JumpAction;
 
 	/** Move Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input)
 	UInputAction* MoveAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* InteractAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input)
 	UInputAction* OpenInventoryAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionZero;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionOne;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionTwo;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionThree;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionFour;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionFive;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionSix;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionSeven;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionEight;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Toolbar")
 	UInputAction* ToolBarQuickSlotActionNine;
 	// Mouse scroll as well???
 
 	// Build Mode Actions
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode")
 	UInputAction* ToggleBuildModeAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode")
 	UInputAction* RotateItemAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode")
 	UInputAction* PlaceItemAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode")
 	UInputAction* CustomScrollAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionZero;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionOne;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionTwo;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionThree;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionFour;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionFive;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionSix;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionSeven;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionEight;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input|Build Mode|Toolbar")
 	UInputAction* BuildToolBarQuickSlotActionNine;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Build Mode", meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Build Mode")
 	TObjectPtr<UBuildShelfComponent> BuildShelf;
 
 	TWeakObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem;
@@ -136,14 +130,7 @@ class AAutomationFoundationCharacter : public ACharacter
 	UPROPERTY()
 	TObjectPtr<APlaceable> PlaceableActor = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category="Build Mode")
-	TSubclassOf<AAFPlaceablePreview> PlaceableClass;
-	UPROPERTY(EditDefaultsOnly, Category="Build Mode")
-	TSubclassOf<AAFMountedPlaceable> MountedPlaceableClass;
-
 	FTimerHandle BuildLocationRefreshTimer;
-
-	IInteractable* CurrentInteractable;
 
 public:
 	AAutomationFoundationCharacter();
@@ -157,7 +144,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	virtual void BeginPlay();
+	virtual void BeginPlay() override;
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -165,7 +152,6 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void Interact(const FInputActionValue& Value);
 	void OpenInventory(const FInputActionValue& Value);
 
 	// Toolbar actions
@@ -201,15 +187,7 @@ protected:
 	// End of APawn interfaced
 
 public:
-	void OnEnterActor(TObjectPtr<AActor> InteractiveActor);
-	void OnLeaveActor();
-
 	bool AddItemToInventory(TObjectPtr<class UInventoryItemInstance> NewItem) const;
-
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
-	void ShowInteractPrompt();
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
-	void HideInteractPrompt();
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
 	void ToggleInventoryUI();
@@ -219,6 +197,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
 	void ToggleExtractionMachineUI();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
+	void ToggleStorageUI();
 
 	UFUNCTION()
 	bool TryAddItemToInventory(UInventoryItemInstance* NewItem) const;
@@ -233,6 +214,17 @@ public:
 	UFUNCTION()
 	void RefreshBuildItem(int32 ActiveToolbarSlot);
 
+	UPROPERTY()
+	AActor* EquippedItem;
+
+	UPROPERTY()
+	TWeakObjectPtr<UInventoryItemInstance> CurrentItemSlot;
+
+	UFUNCTION()
+	void RefreshEquippedItem(int32 NewEquippedItemSlot);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void UpdateAnimInstance(EEquipType NewEquipType);
 private:
 	FHitResult FindBuildModeLocation(ECollisionChannel CollisionChannel = ECC_Visibility) const;
 };

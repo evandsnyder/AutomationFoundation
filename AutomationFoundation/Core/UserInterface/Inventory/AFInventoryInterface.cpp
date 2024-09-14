@@ -3,6 +3,7 @@
 #include "AFInventory.h"
 #include "AFInventorySlot.h"
 #include "AutomationFoundation/Core/AutomationFoundationCharacter.h"
+#include "AutomationFoundation/Core/AutomationFoundationUtilities.h"
 #include "AutomationFoundation/Inventory/InventoryComponent.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/WrapBox.h"
@@ -70,7 +71,7 @@ void UAFInventoryInterface::OnOpenPlayerInventory()
 
 void UAFInventoryInterface::OnOpenExtractionMachine()
 {
-	if(!IsValid(ExtractionMachineWidget))
+	if (!IsValid(ExtractionMachineWidget))
 	{
 		ExtractionMachineWidget = CreateWidget<UAFUserWidget>(this, ExtractorInterfaceClass);
 		CraftingInterfaceSwitcher->AddChild(ExtractionMachineWidget);
@@ -80,8 +81,20 @@ void UAFInventoryInterface::OnOpenExtractionMachine()
 	ExtractionMachineWidget->WidgetActivated();
 }
 
-void UAFInventoryInterface::WidgetActivated()
+void UAFInventoryInterface::OnOpenStorage()
 {
-	Super::WidgetActivated();
+	if (!IsValid(StorageWidget))
+	{
+		LOG_INFO(LogTemp, "Creating Storage Widget")
+		StorageWidget = CreateWidget<UAFUserWidget>(this, StorageInterfaceClass);
+		CraftingInterfaceSwitcher->AddChild(StorageWidget);
+	}
+
+	CraftingInterfaceSwitcher->SetActiveWidget(StorageWidget);
+	StorageWidget->WidgetActivated();
+}
+
+void UAFInventoryInterface::WidgetActivated_Implementation()
+{
 	PlayerInventory->WidgetActivated();
 }

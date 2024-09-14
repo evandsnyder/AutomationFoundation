@@ -37,7 +37,6 @@ protected:
 	UPROPERTY()
 	UAFUserWidget* BuildToolbar;
 
-
 	UPROPERTY()
 	TArray<UAFUserWidget*> AllGameWidgets;
 
@@ -58,6 +57,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleExtractionMachine();
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleStorage();
 
 	UFUNCTION(BlueprintCallable)
 	void EnterBuildMode();

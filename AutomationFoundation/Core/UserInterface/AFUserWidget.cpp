@@ -9,10 +9,10 @@ void UAFUserWidget::NativeConstruct()
 	
 }
 
-void UAFUserWidget::WidgetActivated()
+void UAFUserWidget::WidgetActivated_Implementation()
 {
 }
 
-void UAFUserWidget::WidgetDeactivated()
+void UAFUserWidget::WidgetDeactivated_Implementation()
 {
 }

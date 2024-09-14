@@ -2,26 +2,21 @@
 
 #include "AutomationFoundationCharacter.h"
 
-#include "AutomationFoundationGameMode.h"
 #include "AutomationFoundationPlayerController.h"
 #include "AutomationFoundationUtilities.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
-#include "AutomationFoundation/AutomationFoundation.h"
 #include "AutomationFoundation/BuildSystem/BuildingSpecification.h"
 #include "AutomationFoundation/BuildSystem/BuildShelfComponent.h"
-#include "AutomationFoundation/BuildSystem/PreviewObjects/SupportBeam.h"
-#include "AutomationFoundation/BuildSystem/PreviewObjects/ConveyorBelt.h"
-#include "AutomationFoundation/BuildSystem/PreviewObjects/AFDefaultPreview.h"
+#include "AutomationFoundation/BuildSystem/Buildables/ConveyorBelt.h"
 #include "AutomationFoundation/Components/ToolbarComponent.h"
-#include "AutomationFoundation/Interaction/IInteractable.h"
+#include "AutomationFoundation/Interaction/InteractComponent.h"
 #include "AutomationFoundation/Inventory/InventoryComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/SphereComponent.h"
 #include "Engine/LocalPlayer.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -39,33 +34,17 @@ AAutomationFoundationCharacter::AAutomationFoundationCharacter()
 	FirstPersonCamera->SetRelativeLocation(FVector(20.f, 0.f, 60.f)); // Position the camera
 	FirstPersonCamera->bUsePawnControlRotation = true;
 
-	HeadMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HeadMesh"));
-	// HeadMesh->SetOwnerNoSee(true);
-	HeadMesh->SetupAttachment(GetCapsuleComponent());
-	HeadMesh->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.f));
-	HeadMesh->SetRelativeRotation(FRotator(0.f, 0.f, -90.f));
-
-	BodyMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BodyMesh"));
-	// BodyMesh->SetOwnerNoSee(false);
-	BodyMesh->SetupAttachment(HeadMesh);
-
-	LegMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LegMesh"));
-	// LegMesh->SetOwnerNoSee(true);
-	LegMesh->SetupAttachment(HeadMesh);
-
-	FeetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FeetMesh"));
-	// FeetMesh->SetOwnerNoSee(true);
-	FeetMesh->SetupAttachment(HeadMesh);
-
-
-	CollectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollectionSphere"));
-	CollectionSphere->SetupAttachment(RootComponent);
-	CollectionSphere->SetSphereRadius(200.0f);
+	CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
+	CharacterMesh->SetupAttachment(GetCapsuleComponent());
+	// CharacterMesh->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.f));
+	// CharacterMesh->SetRelativeRotation(FRotator(0.f, 0.f, -90.f));
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 	ToolbarComponent = CreateDefaultSubobject<UToolbarComponent>(TEXT("Toolbar"));
 
 	BuildShelf = CreateDefaultSubobject<UBuildShelfComponent>(TEXT("BuildShelf"));
+
+	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("Interact Component"));
 }
 
 void AAutomationFoundationCharacter::BeginPlay()
@@ -80,6 +59,11 @@ void AAutomationFoundationCharacter::BeginPlay()
 		verify(InputSubsystem.IsValid())
 		InputSubsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
+
+	if (IsValid(ToolbarComponent))
+	{
+		ToolbarComponent->OnActiveSlotChanged.AddDynamic(this, &AAutomationFoundationCharacter::RefreshEquippedItem);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -90,9 +74,8 @@ void AAutomationFoundationCharacter::SetupPlayerInputComponent(UInputComponent* 
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// TODO: Add Jumping Mechanic
-		// EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::Jump);
-		// EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::StopJump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::StopJumping);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAutomationFoundationCharacter::Move);
@@ -100,7 +83,6 @@ void AAutomationFoundationCharacter::SetupPlayerInputComponent(UInputComponent* 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AAutomationFoundationCharacter::Look);
 
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::Interact);
 		EnhancedInputComponent->BindAction(OpenInventoryAction, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::OpenInventory);
 
 		// Bind Toolbar Actions
@@ -132,6 +114,11 @@ void AAutomationFoundationCharacter::SetupPlayerInputComponent(UInputComponent* 
 		EnhancedInputComponent->BindAction(BuildToolBarQuickSlotActionSeven, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::BuildQuickActionSeven);
 		EnhancedInputComponent->BindAction(BuildToolBarQuickSlotActionEight, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::BuildQuickActionEight);
 		EnhancedInputComponent->BindAction(BuildToolBarQuickSlotActionNine, ETriggerEvent::Started, this, &AAutomationFoundationCharacter::BuildQuickActionNine);
+
+		if (IsValid(InteractComponent))
+		{
+			InteractComponent->LinkInputMappingContext(EnhancedInputComponent);
+		}
 	}
 	else
 	{
@@ -140,22 +127,6 @@ void AAutomationFoundationCharacter::SetupPlayerInputComponent(UInputComponent* 
 			       "'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
 		       ), *GetNameSafe(this));
 	}
-}
-
-void AAutomationFoundationCharacter::OnEnterActor(TObjectPtr<AActor> InteractiveActor)
-{
-	CurrentInteractable = Cast<IInteractable>(InteractiveActor);
-	if (CurrentInteractable)
-	{
-		CurrentInteractableActor = InteractiveActor;
-	}
-}
-
-
-void AAutomationFoundationCharacter::OnLeaveActor()
-{
-	CurrentInteractable = nullptr;
-	CurrentInteractableActor = nullptr;
 }
 
 bool AAutomationFoundationCharacter::AddItemToInventory(TObjectPtr<UInventoryItemInstance> NewItem) const
@@ -186,16 +157,11 @@ void AAutomationFoundationCharacter::RotatePlaceableItem(const FInputActionValue
 	if (PlaceableActor)
 	{
 		PlaceableActor->ScrollPreview(Value.GetMagnitude());
-		// TODO: Why is this the Y Axis ???
-		// const FRotator NewRotation = PlaceableActor->GetActorRotation() + FRotator(0.0f, 45.0f * Value.GetMagnitude(), 0.0f);
-		// PlaceableActor->SetActorRotation(NewRotation.Clamp());
 	}
 }
 
 void AAutomationFoundationCharacter::PlaceItem(const FInputActionValue& Value)
 {
-	// TODO: The Placeable should be responsible for all placement logic
-
 	if (IsValid(PlaceableActor))
 	{
 		if (PlaceableActor->PlacePreview())
@@ -285,7 +251,9 @@ void AAutomationFoundationCharacter::RefreshBuildItem(int32 ActiveToolbarSlot)
 
 	const FVector SpawnLocation;
 	const FRotator SpawnRotation;
-	PlaceableActor = GetWorld()->SpawnActor<APlaceable>(PreviewClass, SpawnLocation, SpawnRotation);
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	PlaceableActor = GetWorld()->SpawnActor<APlaceable>(PreviewClass, SpawnLocation, SpawnRotation, SpawnParameters);
 	if (PlaceableActor)
 	{
 		PlaceableActor->Configure(BuildingSpecification);
@@ -296,11 +264,46 @@ void AAutomationFoundationCharacter::RefreshBuildItem(int32 ActiveToolbarSlot)
 	}
 }
 
+void AAutomationFoundationCharacter::RefreshEquippedItem(int32 NewEquippedItemSlot)
+{
+	if (IsValid(EquippedItem))
+	{
+		// GetMesh()->UnlinkAnimClassLayers();
+		if (CurrentItemSlot.IsValid() && CurrentItemSlot->ItemSpecification->AnimationBlueprint)
+		{
+			GetMesh()->UnlinkAnimClassLayers(CurrentItemSlot->ItemSpecification->AnimationBlueprint.Get());
+		}
+		EquippedItem->Destroy();
+	}
+
+	CurrentItemSlot = ToolbarComponent->GetItemInActiveSlot();
+	if (CurrentItemSlot.IsValid())
+	{
+		// Okay... we need to update item in our hands...
+		EquippedItem = GetWorld()->SpawnActor(CurrentItemSlot->ItemSpecification->ActorClass);
+		if (IsValid(EquippedItem))
+		{
+			FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true);
+			EquippedItem->AttachToComponent(CharacterMesh, AttachmentTransformRules, "Equipped_Socket");
+		}
+
+		UClass* AnimBlueprint = CurrentItemSlot->ItemSpecification->AnimationBlueprint ? CurrentItemSlot->ItemSpecification->AnimationBlueprint.LoadSynchronous() : nullptr;
+		if (IsValid(AnimBlueprint))
+		{
+			GetMesh()->LinkAnimClassLayers(AnimBlueprint);
+		}
+	}
+}
+
+void AAutomationFoundationCharacter::UpdateAnimInstance_Implementation(EEquipType NewEquipType)
+{
+	checkNoEntry();
+}
+
 FHitResult AAutomationFoundationCharacter::FindBuildModeLocation(ECollisionChannel CollisionChannel) const
 {
 	// Raycast straight out
 	FCollisionQueryParams TraceParameters = FCollisionQueryParams(TEXT("BuildLineTrace"), true, this);
-	TraceParameters.bDebugQuery = true;
 
 	if (IsValid(PlaceableActor))
 	{
@@ -314,7 +317,7 @@ FHitResult AAutomationFoundationCharacter::FindBuildModeLocation(ECollisionChann
 	FVector InitialTraceEnd = InitialTraceStart + (FirstPersonCamera->GetForwardVector() * 500.f);
 	FHitResult HitResult;
 
-	DrawDebugLine(GetWorld(), InitialTraceStart, InitialTraceEnd, FColor::Red);
+	// DrawDebugLine(GetWorld(), InitialTraceStart, InitialTraceEnd, FColor::Red);
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, InitialTraceStart, InitialTraceEnd, CollisionChannel, TraceParameters))
 	{
@@ -325,7 +328,7 @@ FHitResult AAutomationFoundationCharacter::FindBuildModeLocation(ECollisionChann
 	// Start now starts at the trace end
 	FVector SecondTraceEnd = InitialTraceEnd - FVector(0.f, 0.f, 500.f);
 
-	DrawDebugLine(GetWorld(), InitialTraceEnd, SecondTraceEnd, FColor::Green); // Cast straight down...
+	// DrawDebugLine(GetWorld(), InitialTraceEnd, SecondTraceEnd, FColor::Green); // Cast straight down...
 	GetWorld()->LineTraceSingleByChannel(HitResult, InitialTraceEnd, SecondTraceEnd, ECC_Visibility, TraceParameters);
 	return HitResult;
 }
@@ -352,14 +355,6 @@ void AAutomationFoundationCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
-	}
-}
-
-void AAutomationFoundationCharacter::Interact(const FInputActionValue& Value)
-{
-	if (CurrentInteractable)
-	{
-		CurrentInteractable->OnInteract(this);
 	}
 }
 

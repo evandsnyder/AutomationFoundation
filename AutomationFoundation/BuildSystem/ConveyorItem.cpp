@@ -6,8 +6,8 @@
 #include "AutomationFoundation/Inventory/ItemSpecification.h"
 #include "Components/SplineComponent.h"
 #include "Components/TimelineComponent.h"
-#include "PreviewObjects/ConveyorBelt.h"
-#include "PreviewObjects/Machine.h"
+#include "Buildables/ConveyorBelt.h"
+#include "Buildables/Machine.h"
 
 AConveyorItem::AConveyorItem()
 {
@@ -23,9 +23,7 @@ AConveyorItem::AConveyorItem()
 	DisplayMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	DisplayMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
-	MovementTimeline = FTimeline();
-
-	FloatCurve = CreateDefaultSubobject<UCurveFloat>(TEXT("Float"));
+	TimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
 }
 
 void AConveyorItem::OnConstruction(const FTransform& Transform)
@@ -43,10 +41,24 @@ void AConveyorItem::SpawnNext()
 void AConveyorItem::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	FOnTimelineFloat TimelineTickFunction;
-	TimelineTickFunction.BindDynamic(this, &AConveyorItem::TimelineTick);
-	MovementTimeline.AddInterpFloat(FloatCurve, TimelineTickFunction);
+
+	FOnTimelineEvent OnTimelineTickEvent;
+	OnTimelineTickEvent.BindUFunction(this, GET_FUNCTION_NAME_CHECKED(ThisClass, TimelineTick));
+
+	if (IsValid(FloatCurve))
+	{
+		FOnTimelineFloat TimelineFloat;
+		// TimelineTickFunction.BindDynamic(this, &AConveyorItem::TimelineTick);
+		// MovementTimeline.AddInterpFloat(FloatCurve, TimelineTickFunction);
+		TimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+		TimelineComponent->SetLooping(false);
+		TimelineComponent->SetTimelinePostUpdateFunc(OnTimelineTickEvent);
+	}
+	else
+	{
+		LOG_ERROR(LogTemp, "Bad Timeline");
+	}
+
 
 	if (ConveyorRef.IsValid())
 	{
@@ -55,13 +67,15 @@ void AConveyorItem::BeginPlay()
 		const float TimerLength = ItemInterval / ConveyorRef->GetSpeed();
 		GetWorldTimerManager().SetTimer(SpawnNextTimer, this, &AConveyorItem::SpawnNext, TimerLength);
 	}
+	else
+	{
+		LOG_ERROR(LogTemp, "COnveyor Ref is Invalid");
+	}
 }
 
 void AConveyorItem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	MovementTimeline.TickTimeline(DeltaSeconds);
 }
 
 void AConveyorItem::SetItemSpecification(UItemSpecification* NewItemSpecification)
@@ -93,10 +107,9 @@ void AConveyorItem::OnInteract(AActor* InteractInstigator)
 	}
 }
 
-void AConveyorItem::TimelineTick(float InterpolationValue)
+void AConveyorItem::TimelineTick()
 {
-	TrackProgress = InterpolationValue;
-	LOG_INFO(LogTemp, "Track Progress Alpha: %.4f", TrackProgress);
+	TrackProgress = FloatCurve->GetFloatValue(TimelineComponent->GetPlaybackPosition());
 
 	if (ItemInFront.IsValid())
 	{
@@ -109,9 +122,6 @@ void AConveyorItem::TimelineTick(float InterpolationValue)
 	if (ConveyorRef.IsValid())
 	{
 		const FTransform NextPosition = ConveyorRef->GetTransformByAlpha(TrackProgress);
-		const FTransform EndPosition = ConveyorRef->GetTransformByAlpha(1.0f);
-
-		LOG_INFO(LogTemp, "Position: %s // %s", *NextPosition.GetLocation().ToString(), *EndPosition.GetLocation().ToString());
 
 		if (ConveyorRef->GetTransformByAlpha(1.0f).GetLocation().Equals(NextPosition.GetLocation(), 1.0f))
 		{
@@ -130,7 +140,7 @@ void AConveyorItem::TimelineTick(float InterpolationValue)
 
 void AConveyorItem::RestartMovement()
 {
-	MovementTimeline.Play();
+	TimelineComponent->Play();
 
 	FTimerManager& TimerManager = GetWorldTimerManager();
 
@@ -152,7 +162,7 @@ void AConveyorItem::StopMovement()
 
 void AConveyorItem::ForceStop()
 {
-	MovementTimeline.Stop();
+	TimelineComponent->Stop();
 	FTimerManager& TimerManager = GetWorldTimerManager();
 	if (TimerManager.IsTimerActive(SpawnNextTimer))
 	{
@@ -163,7 +173,6 @@ void AConveyorItem::ForceStop()
 
 void AConveyorItem::OnReachConveyorEnd()
 {
-	LOG_INFO(LogTemp, "Item reached end of belt");
 	ForceStop();
 	bHasReachedEnd = true;
 
@@ -176,8 +185,9 @@ void AConveyorItem::OnReachConveyorEnd()
 		}
 		else if (AMachine* Machine = Cast<AMachine>(BuildInformation.Build))
 		{
-			if (Machine->AcceptInput(BuildInformation.AttachPoint, this))
+			if (Machine->TryAcceptInput(BuildInformation.AttachPoint, this))
 			{
+				// TODO: May need to remove from the conveyors set of elements..
 				Destroy();
 			}
 		}
@@ -225,7 +235,7 @@ bool AConveyorItem::ShouldStop()
 
 bool AConveyorItem::IsStopped() const
 {
-	return !MovementTimeline.IsPlaying();
+	return !TimelineComponent->IsPlaying();
 }
 
 bool AConveyorItem::IsLastItem() const
@@ -241,13 +251,12 @@ void AConveyorItem::SetupTimeline(AConveyorBelt* NewConveyorBelt)
 		ConveyorRef = NewConveyorBelt;
 	}
 
-	MovementTimeline.SetPlaybackPosition(0.0f, false, false);
+	TimelineComponent->SetPlaybackPosition(0.0f, false);
 
 	float PlayRate = FMath::GridSnap(10.0f / (FMath::RoundToInt32(NewConveyorBelt->GetSpline()->GetSplineLength()) / NewConveyorBelt->GetSpeed()), 0.001);
-	LOG_INFO(LogTemp, "Play rate set to: %f", PlayRate);
 
 	// Calculate New Play Rate..
-	MovementTimeline.SetPlayRate(PlayRate);
+	TimelineComponent->SetPlayRate(PlayRate);
 	RestartMovement();
 }
 

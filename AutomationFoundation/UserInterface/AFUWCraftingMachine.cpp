@@ -7,6 +7,7 @@
 #include "AutomationFoundation/Core/UserInterface/Inventory/AFInventorySlot.h"
 #include "AutomationFoundation/Core/UserInterface/Inventory/AFSelectRecipeWidget.h"
 #include "AutomationFoundation/Crafting/CraftingMachine.h"
+#include "AutomationFoundation/Interaction/InteractComponent.h"
 #include "AutomationFoundation/Inventory/InventoryComponent.h"
 #include "Components/ProgressBar.h"
 #include "Components/WrapBox.h"
@@ -26,7 +27,7 @@ void UAFUWCraftingMachine::NativeConstruct()
 	}
 }
 
-void UAFUWCraftingMachine::OnCraftingRecipeChanged(const FRecipeSpecification& NewSpecification)
+void UAFUWCraftingMachine::OnCraftingRecipeChanged(URecipeSpecification* NewSpecification)
 {
 	OwningMachine->SetCraftingRecipe(NewSpecification);
 	// If there are any items in the input or output ingredients, move them over to the player's inventory
@@ -46,9 +47,9 @@ void UAFUWCraftingMachine::RefreshUI()
 	InputIngredientGrid->ClearChildren();
 	OutputIngredientGrid->ClearChildren();
 
-	if (OwningMachine->CurrentRecipe.RecipeID == "UNKNOWN") return;
+	if (!OwningMachine->CurrentRecipe || OwningMachine->CurrentRecipe->RecipeID == "UNKNOWN") return;
 
-	RecipeNameLabel->SetText(OwningMachine->CurrentRecipe.RecipeName);
+	RecipeNameLabel->SetText(OwningMachine->CurrentRecipe->RecipeName);
 
 	OwningMachine->InputInventory->OnItemChanged.AddUniqueDynamic(this, &UAFUWCraftingMachine::OnInputItemChanged);
 	OwningMachine->OutputInventory->OnItemChanged.AddUniqueDynamic(this, &UAFUWCraftingMachine::OnOutputItemChanged);
@@ -57,7 +58,7 @@ void UAFUWCraftingMachine::RefreshUI()
 
 	// Okay... Need to create the slot widgets
 	int i = 0;
-	for (const TPair<FName, int32>& Element : OwningMachine->CurrentRecipe.InputItems)
+	for (const TPair<FName, int32>& Element : OwningMachine->CurrentRecipe->InputItems)
 	{
 		UAFInventorySlot* NewInputWidget = CreateWidget<UAFInventorySlot>(this, InventorySlotWidget);
 		NewInputWidget->SetItemSlot(i);
@@ -68,7 +69,7 @@ void UAFUWCraftingMachine::RefreshUI()
 	}
 
 	i = 0;
-	for (const TPair<FName, int32>& Element : OwningMachine->CurrentRecipe.OutputItems)
+	for (const TPair<FName, int32>& Element : OwningMachine->CurrentRecipe->OutputItems)
 	{
 		UAFInventorySlot* NewOutputWidget = CreateWidget<UAFInventorySlot>(this, InventorySlotWidget);
 		NewOutputWidget->SetItemSlot(i);
@@ -97,10 +98,8 @@ void UAFUWCraftingMachine::OnOutputItemChanged(UInventoryItemInstance* Item, int
 	}
 }
 
-void UAFUWCraftingMachine::WidgetActivated()
+void UAFUWCraftingMachine::WidgetActivated_Implementation()
 {
-	Super::WidgetActivated();
-
 	// Re-bind Widget..
 	const AAutomationFoundationCharacter* Player = Cast<AAutomationFoundationCharacter>(GetOwningPlayerPawn());
 	if (!Player)
@@ -109,19 +108,26 @@ void UAFUWCraftingMachine::WidgetActivated()
 		return;
 	}
 
-	OwningMachine = Cast<ACraftingMachine>(Player->CurrentInteractableActor);
+	UInteractComponent* InteractComponent = Player->GetComponentByClass<UInteractComponent>();
+
+	if (!IsValid(InteractComponent))
+	{
+		LOG_WARNING(LogTemp, "Could not get the interact component from the player");
+		return;
+	}
+
+	OwningMachine = Cast<ACraftingMachine>(InteractComponent->GetInteractTarget());
 	if (!OwningMachine.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Could not bind to machine. Invalid Actor pointer"));
 		return;
 	}
-	
+
 	RefreshUI();
 }
 
-void UAFUWCraftingMachine::WidgetDeactivated()
+void UAFUWCraftingMachine::WidgetDeactivated_Implementation()
 {
-	Super::WidgetDeactivated();
 	// Need to unsubscribe from Item Handlers..
 
 	if (OwningMachine.IsValid())
@@ -135,7 +141,7 @@ void UAFUWCraftingMachine::WidgetDeactivated()
 void UAFUWCraftingMachine::NativeTick(const FGeometry& InGeometry, float InDeltaTime)
 {
 	Super::NativeTick(InGeometry, InDeltaTime);
-	if(OwningMachine.IsValid() && CraftingProgressBar)
+	if (OwningMachine.IsValid() && CraftingProgressBar)
 	{
 		CraftingProgressBar->SetPercent(OwningMachine->GetCraftingProgress());
 	}
@@ -158,7 +164,7 @@ void UAFUWCraftingMachine::OnChangeRecipeButtonClicked()
 	}
 
 	SelectRecipeWidget->SetVisibility(ESlateVisibility::Visible);
-	SelectRecipeWidget->WidgetActivated();
+	SelectRecipeWidget->WidgetActivated_Implementation();
 	if (OwningMachine.IsValid())
 	{
 		SelectRecipeWidget->RefreshAvailableRecipes(OwningMachine->GetMachineType());

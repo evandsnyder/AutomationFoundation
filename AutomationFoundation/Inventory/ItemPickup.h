@@ -8,7 +8,7 @@
 #include "ItemPickup.generated.h"
 
 UCLASS(Blueprintable, BlueprintType)
-class AItemPickup : public APickupBase, public IInteractable
+class AItemPickup : public APickupBase
 {
 	GENERATED_BODY()
 
@@ -26,20 +26,9 @@ public:
 	void ConfigureItemPickup(UInventoryItemInstance* ItemInstance);
 
 protected:
-	// APickupBase Interface
-	virtual void OnPlayerBeginOverlap() override;
-	virtual void OnPlayerEndOverlap() override;
 
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
 	void OnItemCollected();
-
-public:
-	// IInteractable Interface
-	virtual FText GetInteractionText() override;
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interact")
-	void OnInteract(AActor* InteractInstigator);
-	void OnInteract_Implementation(AActor* InteractInstigator);
 };

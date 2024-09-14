@@ -4,9 +4,9 @@
 #include "AutomationFoundation/Core/AutomationFoundationGameMode.h"
 #include "Components/WrapBox.h"
 
-void UAFSelectRecipeWidget::WidgetActivated()
+void UAFSelectRecipeWidget::WidgetActivated_Implementation()
 {
-	Super::WidgetActivated();
+	Super::WidgetActivated_Implementation();
 }
 
 void UAFSelectRecipeWidget::RefreshAvailableRecipes(ECraftingMachineType CraftingMachineType)
@@ -36,7 +36,7 @@ void UAFSelectRecipeWidget::RefreshAvailableRecipes(ECraftingMachineType Craftin
 		break;
 	}
 
-	for(FRecipeSpecification Specification : GameMode->FindAllRecipes(Filter))
+	for(URecipeSpecification* Specification : GameMode->FindAllRecipes(Filter))
 	{
 		UAFUWSelectRecipeSlot* RecipeSlot = CreateWidget<UAFUWSelectRecipeSlot>(this, RecipeSlotClass);
 		RecipeSlot->SetRecipeSpecification(Specification);
@@ -47,9 +47,9 @@ void UAFSelectRecipeWidget::RefreshAvailableRecipes(ECraftingMachineType Craftin
 
 }
 
-void UAFSelectRecipeWidget::OnRecipeSlotSelected(const FRecipeSpecification& NewSpecification)
+void UAFSelectRecipeWidget::OnRecipeSlotSelected(URecipeSpecification* NewSpecification)
 {
 	OnRecipeSelected.Broadcast(NewSpecification);
 	SetVisibility(ESlateVisibility::Collapsed);
-	WidgetDeactivated();
+	WidgetDeactivated_Implementation();
 }

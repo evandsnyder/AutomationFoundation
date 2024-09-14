@@ -8,7 +8,7 @@
 
 class UWrapBox;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRecipeSelectedDelegate, const FRecipeSpecification&, NewRecipeSpecification);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRecipeSelectedDelegate, URecipeSpecification*, NewRecipeSpecification);
 
 UCLASS()
 class UAFSelectRecipeWidget : public UAFUserWidget
@@ -22,7 +22,7 @@ protected:
 	TSubclassOf<UAFUWSelectRecipeSlot> RecipeSlotClass;
 	
 public:
-	virtual void WidgetActivated() override;
+	virtual void WidgetActivated_Implementation() override;
 
 	UPROPERTY(BlueprintAssignable)
 	FRecipeSelectedDelegate OnRecipeSelected;
@@ -30,5 +30,5 @@ public:
 	void RefreshAvailableRecipes(ECraftingMachineType CraftingMachineType);
 
 	UFUNCTION()
-	void OnRecipeSlotSelected(const FRecipeSpecification& NewSpecification);
+	void OnRecipeSlotSelected(URecipeSpecification* NewSpecification);
 };

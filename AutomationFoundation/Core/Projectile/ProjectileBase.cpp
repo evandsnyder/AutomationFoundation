@@ -3,6 +3,7 @@
 #include "AutomationFoundation/Components/HealthComponent.h"
 #include "AutomationFoundation/Core/AutomationFoundationTags.h"
 #include "AutomationFoundation/Core/AutomationFoundationUtilities.h"
+#include "AutomationFoundation/Core/TurretBase.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -57,6 +58,13 @@ void AProjectileBase::OnProjectileOverlap(UPrimitiveComponent* OverlappedComp, A
 	if (UHealthComponent* HealthComponent = OtherActor->GetComponentByClass<UHealthComponent>())
 	{
 		HealthComponent->ApplyHealthChange(BaseDamage);
+		if (!HealthComponent->IsAlive())
+		{
+			if (ATurretBase* Turret = Cast<ATurretBase>(GetOwner()))
+			{
+				Turret->OnEnemyKilled(OtherActor);
+			}
+		}
 	}
 
 	Destroy();

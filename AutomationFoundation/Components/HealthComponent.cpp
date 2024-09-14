@@ -26,3 +26,7 @@ bool UHealthComponent::IsAlive() const
 	return Health > 0.0f;
 }
 
+bool UHealthComponent::IsFull() const
+{
+	return FMath::IsNearlyEqual(MaxHealth, Health);
+}

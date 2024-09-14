@@ -14,5 +14,6 @@ class IItemAcceptor
 {
 	GENERATED_BODY()
 public:
-	virtual UInventoryComponent* GetAcceptorInventory();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	UInventoryComponent* GetAcceptorInventory();
 };

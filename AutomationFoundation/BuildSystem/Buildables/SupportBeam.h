@@ -39,11 +39,11 @@ public:
 
 	virtual void BeginPlay() override;
 
-	virtual bool PlacePreview() override;
-	virtual void CreatePreview() override;
-	virtual void ScrollPreview(float Value) override;
-	virtual void CustomScrollPreview(float Value) override;
-	virtual void UpdateLocation(const FHitResult& HitResult) override;
+	virtual bool PlacePreview_Implementation() override;
+	virtual void CreatePreview_Implementation() override;
+	virtual void ScrollPreview_Implementation(float Value) override;
+	virtual void CustomScrollPreview_Implementation(float Value) override;
+	virtual void UpdateLocation_Implementation(const FHitResult& HitResult) override;
 
 	UFUNCTION()
 	USceneComponent* GetAttachPoint() const; 

@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AutomationFoundation/BuildSystem/BuildingSpecification.h"
 #include "AutomationFoundation/Crafting/CraftingMachineType.h"
 #include "AutomationFoundation/Crafting/RecipeSpecification.h"
+#include "AutomationFoundation/Crafting/RecipeSpecificationDataTableReference.h"
 #include "AutomationFoundation/Inventory/ItemSpecificationDataTableReference.h"
 #include "GameFramework/GameModeBase.h"
 #include "AutomationFoundationGameMode.generated.h"
@@ -18,10 +20,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item System")
 	UDataTable* ItemDatabase;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Crafting System");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Crafting System")
 	TObjectPtr<UDataTable> RecipeDatabase;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Build System");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Build System")
 	UDataTable* BuildingDatabase;
 
 public:
@@ -31,18 +33,17 @@ public:
 	bool FindItem(const FName& ItemID, FItemSpecificationDataTableReference& InItem);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Crafting System")
-	FRecipeSpecification FindRecipe(FName RecipeID, bool& Success);
+	bool FindRecipe(FName RecipeID, FRecipeSpecificationDataTableReference& InRecipe);
 
 	UFUNCTION(BlueprintCallable, Category="Item System")
 	TArray<FItemSpecificationDataTableReference> FindAllItems(); // Maybe with a filter??
 
 	UFUNCTION(BlueprintCallable, Category="Item System")
-	TArray<FRecipeSpecification> FindAllRecipes(ECraftingMachineFilterType MachineType = ECraftingMachineFilterType::All);
+	TArray<URecipeSpecification*> FindAllRecipes(ECraftingMachineFilterType MachineType = ECraftingMachineFilterType::All);
 
 	UFUNCTION(BlueprintCallable, Category = "Build System")
 	TArray<UBuildingSpecification*> FindAllBuildings() const;
-	
+
+	UFUNCTION(BlueprintCallable)
+	ECraftingMachineType ConvertFilterToType(ECraftingMachineFilterType FilterType);
 };
-
-
-

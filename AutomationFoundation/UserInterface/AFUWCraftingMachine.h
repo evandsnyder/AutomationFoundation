@@ -47,8 +47,8 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	virtual void WidgetActivated() override;
-	virtual void WidgetDeactivated() override;
+	virtual void WidgetActivated_Implementation() override;
+	virtual void WidgetDeactivated_Implementation() override;
 
 	virtual void NativeTick(const FGeometry& InGeometry, float InDeltaTime) override;
 
@@ -57,7 +57,7 @@ private:
 	void OnChangeRecipeButtonClicked();
 
 	UFUNCTION()
-	void OnCraftingRecipeChanged(const FRecipeSpecification& NewSpecification);
+	void OnCraftingRecipeChanged(URecipeSpecification* NewSpecification);
 
 	UFUNCTION()
 	void RefreshUI();

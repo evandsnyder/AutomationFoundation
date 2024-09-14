@@ -32,9 +32,9 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UFUNCTION()
-	virtual void WidgetActivated() override;
+	virtual void WidgetActivated_Implementation() override;
 	UFUNCTION()
-	virtual void WidgetDeactivated() override;
+	virtual void WidgetDeactivated_Implementation() override;
 
 	UFUNCTION()
 	void OnOutputItemUpdated(UInventoryItemInstance* Item, int32 ItemIndex);

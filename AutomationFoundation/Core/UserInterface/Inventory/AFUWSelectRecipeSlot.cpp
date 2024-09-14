@@ -13,10 +13,10 @@ void UAFUWSelectRecipeSlot::NativeConstruct()
 	}
 }
 
-void UAFUWSelectRecipeSlot::SetRecipeSpecification(const FRecipeSpecification& NewSpecification)
+void UAFUWSelectRecipeSlot::SetRecipeSpecification(URecipeSpecification* NewSpecification)
 {
 	Specification = NewSpecification;
-	Icon->SetBrushFromSoftTexture(Specification.Icon);
+	Icon->SetBrushFromSoftTexture(Specification->Icon);
 }
 
 void UAFUWSelectRecipeSlot::OnSelectRecipeButtonClicked()

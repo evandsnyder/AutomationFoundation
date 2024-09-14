@@ -48,6 +48,7 @@ protected:
 
 public:
 	AAttachPoint();
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void BeginPlay() override;
 
@@ -59,7 +60,7 @@ public:
 	
 	
 	bool CanConnect(EBuildDirection InDirection) const;
-	bool TryLinkConnectedBuilds(AAttachPoint* OtherAttachPoint);
+	bool TryLinkConnectedBuilds(AAttachPoint* NewLinkedAttachPoint);
 
 	void SetParentBuild(APlaceable* NewParent);
 	void SetDirection(EBuildDirection NewDirection);
@@ -68,4 +69,7 @@ public:
 	APlaceable* GetParentBuild() const;
 	EBuildDirection GetDirection() const;
 	APlaceable* GetConnectedBuild() const;
+
+private:
+	void UpdateArrowVisibility();
 };

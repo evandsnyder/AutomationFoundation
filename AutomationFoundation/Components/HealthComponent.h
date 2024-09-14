@@ -34,6 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsAlive() const;
 
+	UFUNCTION(BlueprintCallable)
+	bool IsFull() const;
+
 private:
 	friend class APawn;
 };

@@ -2,7 +2,7 @@
 
 #include "AutomationFoundation/Core/AutomationFoundationUtilities.h"
 #include "Components/BoxComponent.h"
-#include "PreviewObjects/Placeable.h"
+#include "Buildables/Placeable.h"
 
 AAttachPoint::AAttachPoint()
 {
@@ -19,6 +19,13 @@ AAttachPoint::AAttachPoint()
 	BoxSize = FVector(15.0, 62.f, 35.0f);
 
 	LocationOffset = FVector(-15.f, 0.0f, -20.f);
+
+	UpdateSize(BoxSize, LocationOffset);
+}
+
+void AAttachPoint::OnConstruction(const FTransform& Transform)
+{
+	UpdateSize(BoxSize, LocationOffset);
 }
 
 void AAttachPoint::BeginPlay()
@@ -31,29 +38,10 @@ void AAttachPoint::UpdateSize(const FVector& NewBoxSize, const FVector& NewLocat
 	BoxSize = NewBoxSize;
 	LocationOffset = NewLocationOffset;
 
-	const bool bShouldShowArrow = Direction != EBuildDirection::Unspecified && bShowArrow;
-
-	ArrowMesh->SetHiddenInGame(!bShouldShowArrow);
-
-	if (!bShouldShowArrow)
-	{
-		return;
-	}
-
-	if (IsValid(MaterialClass))
-	{
-		ArrowMaterial = UMaterialInstanceDynamic::Create(MaterialClass, this);
-		ArrowMaterial->SetVectorParameterValue("Color", Direction == EBuildDirection::Unspecified ? FColor::Black : FColor::Emerald);
-		ArrowMesh->SetMaterial(0, ArrowMaterial);
-	}
-
-	if (Direction == EBuildDirection::Input)
-	{
-		ArrowMesh->SetRelativeRotation(FRotator(0.f, 0.f, 180.f));
-	}
-
 	BoxComponent->SetRelativeLocation(FVector(BoxSize.X + LocationOffset.X, LocationOffset.Y, LocationOffset.Z));
 	BoxComponent->SetBoxExtent(BoxSize);
+
+	UpdateArrowVisibility();
 }
 
 void AAttachPoint::OnBuildsLinked()
@@ -66,13 +54,21 @@ bool AAttachPoint::CanConnect(EBuildDirection InDirection) const
 	return !IsValid(ConnectedBuild) && (InDirection != Direction || InDirection == EBuildDirection::Unspecified);
 }
 
-bool AAttachPoint::TryLinkConnectedBuilds(AAttachPoint* OtherAttachPoint)
+bool AAttachPoint::TryLinkConnectedBuilds(AAttachPoint* NewLinkedAttachPoint)
 {
-	if (!IsValid(OtherAttachPoint) || !IsValid(ParentBuild))
+	if (!IsValid(NewLinkedAttachPoint))
+	{
+		LOG_WARNING(LogTemp, "Could not link attach points because new linked attach point is invalid");
 		return false;
+	}
+	if (!IsValid(ParentBuild))
+	{
+		LOG_WARNING(LogTemp, "Could not link attach points because parent build is invalid")
+		return false;
+	}
 
-	ConnectedBuild = OtherAttachPoint->ParentBuild;
-	OtherAttachPoint->ConnectedBuild = ParentBuild;
+	ConnectedBuild = NewLinkedAttachPoint->ParentBuild;
+	NewLinkedAttachPoint->ConnectedBuild = ParentBuild;
 
 	return true;
 }
@@ -85,6 +81,7 @@ void AAttachPoint::SetParentBuild(APlaceable* NewParent)
 void AAttachPoint::SetDirection(EBuildDirection NewDirection)
 {
 	Direction = NewDirection;
+	UpdateArrowVisibility();
 }
 
 void AAttachPoint::SetConnectedBuild(APlaceable* NewConnectedBuild)
@@ -105,4 +102,39 @@ EBuildDirection AAttachPoint::GetDirection() const
 APlaceable* AAttachPoint::GetConnectedBuild() const
 {
 	return ConnectedBuild;
+}
+
+void AAttachPoint::UpdateArrowVisibility()
+{
+	const bool bShouldShowArrow = Direction != EBuildDirection::Unspecified && bShowArrow;
+	ArrowMesh->SetHiddenInGame(!bShouldShowArrow);
+
+	if (!bShouldShowArrow)
+	{
+		return;
+	}
+
+	if (IsValid(MaterialClass))
+	{
+		ArrowMaterial = UMaterialInstanceDynamic::Create(MaterialClass, this);
+		FColor HighlightColor = FColor::Black;
+		switch (Direction)
+		{
+		case EBuildDirection::Input:
+			HighlightColor = FColor::Emerald;
+			break;
+		case EBuildDirection::Output:
+			HighlightColor = FColor::Orange;
+			break;
+		default:
+			break;
+		}
+		ArrowMaterial->SetVectorParameterValue("Color", HighlightColor);
+		ArrowMesh->SetMaterial(0, ArrowMaterial);
+	}
+
+	if (Direction == EBuildDirection::Input)
+	{
+		ArrowMesh->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+	}
 }

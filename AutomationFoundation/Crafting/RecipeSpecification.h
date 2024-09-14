@@ -4,11 +4,12 @@
 #include "CraftingMachineType.h"
 #include "RecipeSpecification.generated.h"
 
-USTRUCT(BlueprintType)
-struct FRecipeSpecification : public FTableRowBase
+UCLASS(BlueprintType)
+class URecipeSpecification : public UDataAsset
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 	
+public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName RecipeID = "UNKNOWN";
 
@@ -35,7 +36,4 @@ struct FRecipeSpecification : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSoftObjectPtr<UTexture2D> Icon;
-
-	// Should there be some kind of recipe class to support alternative recipes??
-	// This is a Satisfactory Feature, but I think is too complicated for an MVP
 };

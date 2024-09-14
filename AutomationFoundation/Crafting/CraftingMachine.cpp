@@ -3,22 +3,12 @@
 #include "AutomationFoundation/Core/AutomationFoundationCharacter.h"
 #include "AutomationFoundation/Core/AutomationFoundationGameMode.h"
 #include "AutomationFoundation/Inventory/InventoryComponent.h"
-#include "Components/BoxComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 ACraftingMachine::ACraftingMachine() : ACraftingMachineBase(ECraftingMachineType::Basic)
 {
-	InteractBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Crafting Machine Interaction Range"));
-	RootComponent = InteractBox;
-
-	InteractBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &ACraftingMachine::BeginOverlap);
-	InteractBox->OnComponentEndOverlap.AddUniqueDynamic(this, &ACraftingMachine::EndOverlap);
-
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Crafting Machine Mesh"));
-	Mesh->SetupAttachment(RootComponent);
-
 	InputInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Input Ingredients"));
 	OutputInventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Output Ingredients"));
-	// No Point in setting a size at this point because we don't have any recipe set
 }
 
 void ACraftingMachine::BeginPlay()
@@ -31,25 +21,24 @@ void ACraftingMachine::BeginPlay()
 	}
 }
 
-void ACraftingMachine::SetCraftingRecipe(const FRecipeSpecification& NewRecipe)
+void ACraftingMachine::SetCraftingRecipe(URecipeSpecification* NewRecipe)
 {
 	CurrentRecipe = NewRecipe;
 
-	// Need a refresh behavior..?
+	// TODO: Need a refresh behavior
 	// Move all input/output ingredients to the player inventory
 	// ensure our inventory is empty
 
 	int32 i = 0;
-	InputInventory->SetInventorySize(CurrentRecipe.InputItems.Num());
-	for (auto const& [ItemID, _] : CurrentRecipe.InputItems)
+	InputInventory->SetInventorySize(CurrentRecipe->InputItems.Num());
+	for (auto const& [ItemID, _] : CurrentRecipe->InputItems)
 	{
 		InputInventory->AddInventoryFilter(ItemID, i);
 		i++;
 	}
 
-	i = 0;
-	OutputInventory->SetInventorySize(CurrentRecipe.OutputItems.Num());
-	for (auto const& [ItemID, _] : CurrentRecipe.OutputItems)
+	OutputInventory->SetInventorySize(CurrentRecipe->OutputItems.Num());
+	for (auto const& [ItemID, _] : CurrentRecipe->OutputItems)
 	{
 		OutputInventory->AddInventoryFilter(ItemID, i);
 		i++;
@@ -72,12 +61,12 @@ void ACraftingMachine::OnCraftingComplete_Implementation()
 	// Remove items from the input inventory...
 	for (UInventoryItemInstance* InputItem : InputInventory->Inventory)
 	{
-		InputItem->CurrentStackSize -= CurrentRecipe.InputItems[InputItem->ItemSpecification->ItemID];
+		InputItem->CurrentStackSize -= CurrentRecipe->InputItems[InputItem->ItemSpecification->ItemID];
 		InputInventory->OnItemChanged.Broadcast(InputItem, 0);
 	}
 
 	// Add output Items to the Output Inventory
-	for (const auto& OutputItem : CurrentRecipe.OutputItems)
+	for (const auto& OutputItem : CurrentRecipe->OutputItems)
 	{
 		// Lookup the ItemSpecification
 		FItemSpecificationDataTableReference ItemSpecRef;
@@ -110,50 +99,7 @@ void ACraftingMachine::OnCraftingComplete_Implementation()
 	}
 }
 
-void ACraftingMachine::OnInteract(AActor* InteractInstigator)
-{
-	UE_LOG(LogTemp, Display, TEXT("Interacting with  Crafting Machine"));
-
-	if (PlayerCharacter)
-	{
-		PlayerCharacter->ToggleCraftingMachineUI();
-	}
-}
-
-FText ACraftingMachine::GetInteractionText()
-{
-	return FText::FromString("Interact with Crafting Machine");
-}
-
-void ACraftingMachine::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                    UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Entered Overlap of crafing Machine"));
-	}
-	PlayerCharacter = Cast<AAutomationFoundationCharacter>(OtherActor);
-	if (!PlayerCharacter) return;
-
-	PlayerCharacter->OnEnterActor(this);
-	PlayerCharacter->ShowInteractPrompt();
-}
-
-void ACraftingMachine::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                  UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex)
-{
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Ended Overlap of crafing Machine"));
-	}
-	if (PlayerCharacter)
-	{
-		PlayerCharacter->HideInteractPrompt();
-		PlayerCharacter->OnLeaveActor();
-	}
-}
-
-void ACraftingMachine::OnInputItemAdded(UInventoryItemInstance* NewItem, int32 ItemIndex)
+void ACraftingMachine::OnInputItemAdded_Implementation(UInventoryItemInstance* NewItem, int32 ItemIndex)
 {
 	if (bIsCrafting) return; // No need to process anymore logic if we're already crafting
 
@@ -176,8 +122,12 @@ bool ACraftingMachine::AreInputIngredientsSatisfied() const
 {
 	for (const UInventoryItemInstance* ItemInstance : InputInventory->Inventory)
 	{
+		if(!IsValid(ItemInstance))
+		{
+			return false;
+		}
 		const FName& ItemID = ItemInstance->ItemSpecification->ItemID;
-		if (!CurrentRecipe.InputItems.Contains(ItemID) || ItemInstance->CurrentStackSize < CurrentRecipe.InputItems[ItemID])
+		if (!CurrentRecipe->InputItems.Contains(ItemID) || ItemInstance->CurrentStackSize < CurrentRecipe->InputItems[ItemID])
 		{
 			return false;
 		}
@@ -196,7 +146,7 @@ bool ACraftingMachine::IsOutputFull() const
 	{
 		if (IsValid(ItemInstance) &&
 			ItemInstance->CurrentStackSize >=
-			(ItemInstance->ItemSpecification->MaxStackSize - CurrentRecipe.OutputItems[ItemInstance->ItemSpecification->ItemID])
+			(ItemInstance->ItemSpecification->MaxStackSize - CurrentRecipe->OutputItems[ItemInstance->ItemSpecification->ItemID])
 		)
 			return true;
 	}
@@ -213,17 +163,35 @@ float ACraftingMachine::GetCraftingProgress() const
 {
 	if (!bIsCrafting) return 0.0f;
 
-	return FMath::Clamp(GetWorldTimerManager().GetTimerElapsed(CraftingTimer) / CurrentRecipe.CraftingTime, 0.0f, 1.0f);
+	return FMath::Clamp(GetWorldTimerManager().GetTimerElapsed(CraftingTimer) / CurrentRecipe->CraftingTime, 0.0f, 1.0f);
 }
 
-UInventoryComponent* ACraftingMachine::GetAcceptorInventory()
+UInventoryComponent* ACraftingMachine::GetAcceptorInventory_Implementation()
 {
 	return InputInventory;
 }
 
-UInventoryComponent* ACraftingMachine::GetProviderInventory()
+UInventoryComponent* ACraftingMachine::GetProviderInventory_Implementation()
 {
 	return OutputInventory;
+}
+
+FString ACraftingMachine::GetInteractText()
+{
+	return "Open Crafting Machine";
+}
+
+void ACraftingMachine::Interact_Implementation(AActor* OtherActor)
+{
+	if (AAutomationFoundationCharacter* Character = Cast<AAutomationFoundationCharacter>(OtherActor))
+	{
+		Character->ToggleCraftingMachineUI();
+	}
+}
+
+bool ACraftingMachine::ShouldGetOtherActorToInteractWith()
+{
+	return true;
 }
 
 void ACraftingMachine::StartCrafting()
@@ -231,5 +199,5 @@ void ACraftingMachine::StartCrafting()
 	// Maybe move required ingredients into a special, temporary place? (like a crafting queue)
 	bIsCrafting = true;
 	GetWorldTimerManager().SetTimer(CraftingTimer, this, &ACraftingMachine::OnCraftingComplete,
-	                                CurrentRecipe.CraftingTime);
+	                                CurrentRecipe->CraftingTime);
 }
